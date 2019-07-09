@@ -1,0 +1,45 @@
+# editor cruft
+
+# vim can generate more than just swp and swo...
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# just this for emacs by default
+*~
+
+# build cruft
+*.o
+*.so
+*.d
+*.cmd
+*.pyc
+
+# latex / misc cruft
+
+*.aux
+*.bbl
+*.blg
+*.log
+*-eps-converted-to.pdf
+latex-all.tex
+paper.out
+paper.pdf
+*.xml
+
+# specific cruft
+
+t_agent
+ll_read_agent
+coordinator/coordinator
+agents/l_rpclib_agent
+agents/l_tcp_agent
+agents/redis_loader
+agents/t_rpclib_agent
+agents/t_tcp_agent
+build/
+
+# CLion default cmake build directories
+cmake-build-*/
