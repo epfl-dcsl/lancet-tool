@@ -53,7 +53,7 @@ enum transport_protocol_type {
 struct agent_config {
 	int thread_count;
 	int conn_count;
-	struct host_tuple targets[64];
+	struct host_tuple targets[8192];
 	int target_count;
 	enum agent_type atype;
 	enum transport_protocol_type tp_type;
