@@ -37,7 +37,7 @@ coordinator:
 
 agents: clean
 	mkdir agents/assets
-	cmake -DCMAKE_BUILD_TYPE=Debug -S . -B agents/assets
+	cmake -DCMAKE_BUILD_TYPE=Release -S . -B agents/assets
 	cmake	--build agents/assets
 
 agents_r2p2: clean
