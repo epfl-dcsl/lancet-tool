@@ -51,13 +51,13 @@ agents_r2p2_nic_ts: clean
 	cmake	--build agents/assets
 
 deploy: clean_remote
-	scripts/deploy_lancet.sh ${HOSTS}
+	scripts/deploy_lancet.sh ${HOSTS} ${DIR}
 
 prepare_clients:
 	scripts/prepare_clients.sh ${HOSTS}
 
 clean_remote:
-	scripts/clean_up.sh ${HOSTS}
+	scripts/clean_up.sh ${HOSTS} ${DIR}
 
 clean:
 	rm -rf agents/assets
