@@ -55,12 +55,15 @@ class LancetLatencyStats:
         self.IsIID = 0
         self.ToReduce = 0
 
-def get_ci_bounds(size, percentile):
+def get_ci(samples, percentile):
+    size = len(samples)
     heta = 1.96 # for 95th confidence
     prod = size*percentile
     j = math.floor(prod - heta*math.sqrt(prod*(1-percentile)))
     k = math.ceil(prod + heta*math.sqrt(prod*(1-percentile))) + 1
-    return int(j), int(k)
+    j, k = int(j), int(k)
+    j, k = [int(samples[x]) if 0 <= x < size else 0 for x in [j, k]]
+    return j, k
 
 def check_iid(all_latency_stats, per_thread_samples):
     if (len(all_latency_stats) == 0):
@@ -141,21 +144,13 @@ def aggregate_latency(stats, per_thread_samples):
     all_samples.sort()
     agg.Avg_latency = int(numpy.mean(all_samples))
     agg.P50 = int(numpy.percentile(all_samples, 50))
-    i, k = get_ci_bounds(len(all_samples), 0.5)
-    agg.P50i = int(all_samples[i])
-    agg.P50k = int(all_samples[k])
+    agg.P50i, agg.P50k = get_ci(all_samples, 0.5)
     agg.P90 = int(numpy.percentile(all_samples, 90))
-    i, k = get_ci_bounds(len(all_samples), 0.9)
-    agg.P90i = int(all_samples[i])
-    agg.P90k = int(all_samples[k])
+    agg.P90i, agg.P90k = get_ci(all_samples, 0.9)
     agg.P95 = int(numpy.percentile(all_samples, 95))
-    i, k = get_ci_bounds(len(all_samples), 0.95)
-    agg.P95i = int(all_samples[i])
-    agg.P95k = int(all_samples[k])
+    agg.P95i, agg.P95k = get_ci(all_samples, 0.95)
     agg.P99 = int(numpy.percentile(all_samples, 99))
-    i, k = get_ci_bounds(len(all_samples), 0.99)
-    agg.P99i = int(all_samples[i])
-    agg.P99k= int(all_samples[k])
+    agg.P99i, agg.P99k = get_ci(all_samples, 0.99)
     agg.is_stationary = check_stationarity(stats, per_thread_samples)
     is_iid, to_reduce = check_iid(stats, per_thread_samples)
     agg.IsIID = is_iid
