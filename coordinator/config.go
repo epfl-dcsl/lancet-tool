@@ -57,7 +57,12 @@ type ExperimentConfig struct {
 	privateKeyPath string
 }
 
-func ParseConfig() (*ServerConfig, *ExperimentConfig, error) {
+type GeneralConfig struct {
+	runAgents      bool
+	printAgentArgs bool
+}
+
+func ParseConfig() (*ServerConfig, *ExperimentConfig, *GeneralConfig, error) {
 	currentUser, _ := user.Current()
 	id_rsa_path := path.Join(currentUser.HomeDir, ".ssh/id_rsa")
 	var agentPort = flag.Int("agentPort", 5001, "listening port of the agent")
@@ -79,17 +84,22 @@ func ParseConfig() (*ServerConfig, *ExperimentConfig, error) {
 	var privateKey = flag.String("privateKey", id_rsa_path, "location of the (local) private key to deploy the agents. Will find a default if not specified")
 	var ifName = flag.String("ifName", "enp65s0", "interface name for hardware timestamping")
 	var reqPerConn = flag.Int("reqPerConn", 1, "Number of outstanding requests per TCP connection")
+	var runAgents = flag.Bool("runAgents", true, "Automatically run agents")
+	var printAgentArgs = flag.Bool("printAgentArgs", false, "Print in JSON format the arguments for each agent")
 
 	flag.Parse()
 
 	serverCfg := &ServerConfig{}
 	expCfg := &ExperimentConfig{}
+	generalCfg := &GeneralConfig{}
 
-	if x, err := os.Stat(*privateKey); err != nil {
-		fmt.Printf("Unable to find private ssh key at path '%s'\n", *privateKey)
-		return nil, nil, err
-	} else if x.IsDir() {
-		return nil, nil, fmt.Errorf("Have a directory at ssh path %s\n", *privateKey)
+	if *runAgents {
+		if x, err := os.Stat(*privateKey); err != nil {
+			fmt.Printf("Unable to find private ssh key at path '%s'\n", *privateKey)
+			return nil, nil, nil, err
+		} else if x.IsDir() {
+			return nil, nil, nil, fmt.Errorf("Have a directory at ssh path %s\n", *privateKey)
+		}
 	}
 
 	serverCfg.target = *target
@@ -125,5 +135,8 @@ func ParseConfig() (*ServerConfig, *ExperimentConfig, error) {
 	expCfg.nicTS = *nicTS
 	expCfg.privateKeyPath = *privateKey
 
-	return serverCfg, expCfg, nil
+	generalCfg.runAgents = *runAgents
+	generalCfg.printAgentArgs = *printAgentArgs
+
+	return serverCfg, expCfg, generalCfg, nil
 }
