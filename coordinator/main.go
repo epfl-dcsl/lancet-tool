@@ -26,6 +26,7 @@ package main
 // #include "../inc/lancet/coord_proto.h"
 import "C"
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -45,7 +46,7 @@ type agent struct {
 
 func main() {
 
-	serverCfg, expCfg, err := ParseConfig()
+	serverCfg, expCfg, generalCfg, err := ParseConfig()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -65,17 +66,26 @@ func main() {
 
 	c.agentPort = expCfg.agentPort
 
+	var agentArgsMap map[string]string;
+	if generalCfg.printAgentArgs {
+		agentArgsMap = make(map[string]string);
+	}
+
 	// Run throughput agents
 	agentArgs := fmt.Sprintf("-s %s -t %d -c %d -o %d -i %s -p %s -r %s -a 0",
 		serverCfg.target, serverCfg.thThreads, serverCfg.thConn, serverCfg.reqPerConn,
 		serverCfg.idist, serverCfg.comProto, serverCfg.appProto)
 	for i, a := range expCfg.thAgents {
-		session, err := runAgent(a, expCfg.privateKeyPath, agentArgs)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		if generalCfg.printAgentArgs {
+			agentArgsMap[a] = agentArgs;
+		} else if generalCfg.runAgents {
+			session, err := runAgent(a, expCfg.privateKeyPath, agentArgs)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			defer session.Close()
 		}
-		defer session.Close()
 		c.thAgents[i] = &agent{name: a, aType: tHROUGHPUT_AGENT}
 	}
 
@@ -84,12 +94,16 @@ func main() {
 		serverCfg.target, serverCfg.ltThreads, serverCfg.ltConn,
 		serverCfg.idist, serverCfg.comProto, serverCfg.appProto)
 	for i, a := range expCfg.ltAgents {
-		session, err := runAgent(a, expCfg.privateKeyPath, ltArgs)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		if generalCfg.printAgentArgs {
+			agentArgsMap[a] = ltArgs;
+		} else if generalCfg.runAgents {
+			session, err := runAgent(a, expCfg.privateKeyPath, ltArgs)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			defer session.Close()
 		}
-		defer session.Close()
 		c.ltAgents[i] = &agent{name: a, aType: lATENCY_AGENT}
 	}
 
@@ -103,16 +117,28 @@ func main() {
 		symArgs = fmt.Sprintf("%s -a %d", symArgsPre, 3)
 	}
 	for i, a := range expCfg.symAgents {
-		session, err := runAgent(a, expCfg.privateKeyPath, symArgs)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		if generalCfg.printAgentArgs {
+			agentArgsMap[a] = symArgs;
+		} else if generalCfg.runAgents {
+			session, err := runAgent(a, expCfg.privateKeyPath, symArgs)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			defer session.Close()
 		}
-		defer session.Close()
 		c.symAgents[i] = &agent{name: a, aType: lATENCY_AGENT}
 	}
 
-	time.Sleep(5000 * time.Millisecond)
+	if generalCfg.printAgentArgs {
+		agentArgsMapStr, _ := json.Marshal(agentArgsMap)
+		fmt.Println(string(agentArgsMapStr))
+		os.Exit(0)
+	}
+
+	if generalCfg.runAgents {
+		time.Sleep(5000 * time.Millisecond)
+	}
 
 	// Initialize management connections
 	for _, a := range c.thAgents {

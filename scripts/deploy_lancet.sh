@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 for hostname in `IFS=',' inarr=($1) && echo ${inarr[@]}`; do
-	dirname=/tmp/`whoami`/lancet
+	dirname=${2:-/tmp/`whoami`/lancet}
 	ssh $hostname mkdir -p $dirname
 	scp agent-manager/dist/lancet_manager-0.1.0-py3-none-any.whl $hostname:$dirname
 	ssh $hostname << EOF
