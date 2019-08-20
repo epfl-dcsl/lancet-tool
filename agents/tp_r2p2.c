@@ -161,14 +161,13 @@ static void throughput_r2p2_main(void)
 			ctx->success_cb = lancet_success_cb;
 			ctx->error_cb = lancet_error_cb;
 			ctx->timeout_cb = lancet_timeout_cb;
-			if (to_send->meta)
+			if (to_send->meta == (void *)FIXED_ROUTE)
 				ctx->destination = &targets[0];
 			else
 				ctx->destination = &targets[rand() % target_count];
 			ctx->arg = (void *)ctx;
 			ctx->timeout = 5000000;
-			// ctx->routing_policy = to_send->meta ? FIXED_ROUTE : LB_ROUTE;
-			ctx->routing_policy = FIXED_ROUTE;
+			ctx->routing_policy = (int)(unsigned long)to_send->meta;
 
 			time_ns_to_ts(&tx_timestamp);
 			add_tx_timestamp(&tx_timestamp);
@@ -270,8 +269,7 @@ static void latency_r2p2_main(void)
 		// Prepare request
 		to_send = prepare_request();
 		bzero(&msg, sizeof(struct r2p2_msg));
-		// policy = to_send->meta ? FIXED_ROUTE : LB_ROUTE;
-		policy = FIXED_ROUTE;
+		policy = (int)(unsigned long)to_send->meta;
 		rid = rand();
 		r2p2_prepare_msg(&msg, &to_send->iovs[0], 1, REQUEST_MSG, policy, rid);
 		gb = msg.head_buffer;
@@ -396,7 +394,7 @@ static void symmetric_nic_r2p2_main(void)
 				ctx->destination = &targets[rand() % target_count];
 			ctx->arg = (void *)ctx;
 			ctx->timeout = 5000000;
-			ctx->routing_policy = to_send->meta ? FIXED_ROUTE : LB_ROUTE;
+			ctx->routing_policy = (int)(unsigned long)to_send->meta;
 
 			// send msg
 			r2p2_send_req(&to_send->iovs[0], 1, ctx);
@@ -452,14 +450,14 @@ static void symmetric_r2p2_main(void)
 			ctx->success_cb = lancet_success_timestamping_cb;
 			ctx->error_cb = lancet_error_cb;
 			ctx->timeout_cb = lancet_timeout_cb;
-			if (to_send->meta)
+			if (to_send->meta == (void *)FIXED_ROUTE)
 				ctx->destination = &targets[0];
 			else
 				ctx->destination = &targets[rand() % target_count];
 			time_ns_to_ts(tx_timestamp);
 			ctx->arg = (void *)ctx;
 			ctx->timeout = 5000000;
-			ctx->routing_policy = to_send->meta ? FIXED_ROUTE : LB_ROUTE;
+			ctx->routing_policy = (int)(unsigned long)to_send->meta;
 
 			// send msg
 			r2p2_send_req(&to_send->iovs[0], 1, ctx);

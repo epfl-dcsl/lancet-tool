@@ -109,6 +109,16 @@ int synthetic_create_request(struct application_protocol *proto,
 	return 0;
 }
 
+int rep_synth_create_request(struct application_protocol *proto,
+							 struct request *req)
+{
+	synthetic_create_request(proto, req);
+	req->meta = (void *)(unsigned long)2; // replicated route
+
+	return 0;
+}
+
+
 struct byte_req_pair
 synthetic_consume_response(struct application_protocol *proto,
 						   struct iovec *response)
@@ -135,7 +145,10 @@ static int synthetic_init(char *proto, struct application_protocol *app_proto)
 	app_proto->type = PROTO_SYNTHETIC;
 	// The proto arg is the random generator
 	app_proto->arg = gen;
-	app_proto->create_request = synthetic_create_request;
+	if (strncmp(proto, "rep", 3) == 0)
+		app_proto->create_request = rep_synth_create_request;
+	else
+		app_proto->create_request = synthetic_create_request;
 	app_proto->consume_response = synthetic_consume_response;
 
 	return 0;
@@ -164,7 +177,9 @@ struct application_protocol *init_app_proto(char *proto)
 		if (i != 0) {
 			return NULL;
 		}
-	} else {
+	} else if (strncmp(proto, "rep-synth", 9) == 0)
+		synthetic_init(proto, app_proto);
+	else {
 		lancet_fprintf(stderr, "Unknown application protocol\n");
 		return NULL;
 	}
