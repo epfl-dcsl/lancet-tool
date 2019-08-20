@@ -47,7 +47,7 @@ void lancet_success_nic_timestamping_cb(long handle, void *arg,
 	int ret;
 
 	// FIXME: Need to process response
-	struct byte_req_pair read_res;
+	struct byte_req_pair read_res = {0};
 
 	for (int i = 0; i < iovcnt; i++)
 		read_res.bytes += iov[i].iov_len;
@@ -81,7 +81,7 @@ void lancet_success_timestamping_cb(long handle, void *arg, struct iovec *iov,
 	time_ns_to_ts(&rx_timestamp);
 
 	// FIXME: Need to process response
-	struct byte_req_pair read_res;
+	struct byte_req_pair read_res = {0};
 
 	for (int i = 0; i < iovcnt; i++)
 		read_res.bytes += iov[i].iov_len;
