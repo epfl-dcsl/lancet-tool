@@ -333,6 +333,7 @@ static struct param_3 *parse_param_3(char *type)
 struct rand_gen *init_rand(char *gen_type)
 {
 	struct rand_gen *gen = (struct rand_gen *)malloc(sizeof(struct rand_gen));
+	assert(gen);
 
 	if (strncmp(gen_type, "fixed", 5) == 0)
 		fixed_init(gen, parse_param_1(gen_type));

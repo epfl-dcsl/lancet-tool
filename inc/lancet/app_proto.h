@@ -53,7 +53,7 @@ enum app_proto_type {
 	PROTO_MEMCACHED_BIN,
 	PROTO_MEMCACHED_ASCII,
 	PROTO_HTTP,
-	PROTO_REP_SYNTHETIC,
+	PROTO_STSS,
 };
 
 struct application_protocol {

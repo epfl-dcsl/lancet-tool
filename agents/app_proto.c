@@ -34,7 +34,7 @@
 #include <lancet/rand_gen.h>
 
 __thread void *per_thread_arg = NULL;
-char random_char[2 * 1024 * 1024];
+char random_char[MAX_VAL_SIZE];
 
 /*
  * Echo protocol
@@ -109,30 +109,6 @@ int synthetic_create_request(struct application_protocol *proto,
 	return 0;
 }
 
-int rep_synth_create_request(struct application_protocol *proto,
-							 struct request *req)
-{
-	long * rep_arg = (long *)proto->arg;
-	struct rand_gen *generator = (struct rand_gen *)rep_arg[0];
-
-	if (!per_thread_arg) {
-		per_thread_arg = malloc(sizeof(long));
-		assert(per_thread_arg);
-	}
-	per_thread_arg = (void *)lround(generate(generator));
-	req->iovs[0].iov_base = &per_thread_arg;
-	req->iovs[0].iov_len = sizeof(long);
-	req->iov_cnt = 1;
-
-	if (drand48()*100 <= rep_arg[1])
-		req->meta = (void *)(unsigned long)3; // replicated route no side effects
-	else
-		req->meta = (void *)(unsigned long)2; // replicated route no side effects
-
-	return 0;
-}
-
-
 struct byte_req_pair
 synthetic_consume_response(struct application_protocol *proto,
 						   struct iovec *response)
@@ -148,7 +124,6 @@ static int synthetic_init(char *proto, struct application_protocol *app_proto)
 {
 	char *token;
 	struct rand_gen *gen = NULL;
-	long *rep_arg;
 
 	// Remove the type.
 	token = strtok(proto, ":");
@@ -157,22 +132,123 @@ static int synthetic_init(char *proto, struct application_protocol *app_proto)
 	gen = init_rand(token);
 	assert(gen);
 
-	if (strncmp(proto, "rep", 3) == 0) {
-		rep_arg = malloc(2*sizeof(long));
-		assert(rep_arg);
-		rep_arg[0] = (long) gen;
-		token = strtok(NULL, "");
-		rep_arg[1] = atof(token);
-		printf("Percentage of NO_SIDE_EFFECT is %ld\n", rep_arg[1]);
-		app_proto->arg = rep_arg;
-		app_proto->type = PROTO_REP_SYNTHETIC;
-		app_proto->create_request = rep_synth_create_request;
-	} else {
-		app_proto->type = PROTO_SYNTHETIC;
-		app_proto->arg = gen;
-		app_proto->create_request = synthetic_create_request;
-	}
+	app_proto->type = PROTO_SYNTHETIC;
+	// The proto arg is the random generator
+	app_proto->arg = gen;
+	app_proto->create_request = synthetic_create_request;
 	app_proto->consume_response = synthetic_consume_response;
+
+	return 0;
+}
+
+/*
+ * STSS - synthetic time sythetic size protocol
+ */
+struct stss_data {
+	struct rand_gen *time_gen;
+	struct rand_gen *req_size_gen;
+	struct rand_gen *rep_size_gen;
+	int replicated;
+	double read_ratio;
+};
+
+/*
+ * Request 3 longs service_time, request_size, reply_size
+ */
+int stss_create_request(struct application_protocol *proto,
+		struct request *req)
+{
+	struct stss_data *data = (struct stss_data *)proto->arg;
+	long *req_payload;
+
+	if (!per_thread_arg) {
+		per_thread_arg = malloc(3*sizeof(long));
+		assert(per_thread_arg);
+	}
+	req_payload = (long *)per_thread_arg;
+	req_payload[0] = lround(generate(data->time_gen));
+	req_payload[1] = lround(generate(data->req_size_gen));
+	req_payload[2] = lround(generate(data->rep_size_gen));
+	req->iovs[0].iov_base = per_thread_arg;
+	req->iovs[0].iov_len = 3*sizeof(long);
+	req->iovs[1].iov_base = random_char;
+	req->iovs[1].iov_len = req_payload[1];
+	req->iov_cnt = 2;
+	if (data->replicated) {
+		if (drand48() <= data->read_ratio)
+			req->meta = (void *)(unsigned long)3; // replicated route no side effects
+		else
+			req->meta = (void *)(unsigned long)2; // replicated route side effects
+
+	} else
+		req->meta = NULL;
+
+	return 0;
+}
+
+/*
+ * Reply size 1 long (#bytes to follow) + payload
+ */
+struct byte_req_pair stss_consume_response(struct application_protocol *proto,
+		struct iovec *response)
+{
+	struct byte_req_pair res = {0};
+	long *payload_size;
+	char *tmp;
+	int processed;
+
+	printf("Consume response\n");
+
+	assert(response->iov_len >= sizeof(long));
+	tmp = response->iov_base;
+	while (1) {
+		payload_size = (long *)&tmp[processed];
+		processed += sizeof(long);
+		if (*payload_size < (response->iov_len - processed))
+			break;
+		processed += *payload_size;
+		res.reqs += 1;
+		res.bytes += (sizeof(long) + *payload_size);
+		if (sizeof(long) < (response->iov_len - processed))
+			break;
+	}
+	return res;
+}
+
+static int stss_init(char *proto, struct application_protocol *app_proto)
+{
+	struct stss_data *data;
+	char *token, *saveptr;
+
+	data = calloc(1, sizeof(struct stss_data));
+	assert(data);
+
+	saveptr = proto;
+	token = strtok_r(saveptr, "_", &saveptr);
+	if (strncmp(token, "stss", 4) == 0)
+		data->replicated = 0;
+	else if (strncmp(token, "stssr", 5) == 0)
+		data->replicated = 1;
+	else
+		assert(0);
+	token = strtok_r(saveptr, "_", &saveptr);
+	data->time_gen = init_rand(token);
+	assert(data->time_gen);
+	token = strtok_r(saveptr, "_", &saveptr);
+	data->req_size_gen = init_rand(token);
+	assert(data->req_size_gen);
+	token = strtok_r(saveptr, "_", &saveptr);
+	data->rep_size_gen = init_rand(token);
+	assert(data->rep_size_gen);
+	if (data->replicated) {
+		token = strtok_r(saveptr, "_", &saveptr);
+		data->read_ratio = atof(token);
+	}
+
+	app_proto->arg = data;
+	app_proto->create_request = stss_create_request;
+	app_proto->consume_response = stss_consume_response;
+	app_proto->type = PROTO_STSS;
 
 	return 0;
 }
@@ -197,11 +273,10 @@ struct application_protocol *init_app_proto(char *proto)
 		memcache_init(proto, app_proto);
 	else if (strncmp(proto, "http", 4) == 0) {
 		int i = http_proto_init(proto, app_proto);
-		if (i != 0) {
+		if (i != 0)
 			return NULL;
-		}
-	} else if (strncmp(proto, "rep-synth", 9) == 0)
-		synthetic_init(proto, app_proto);
+	} else if (strncmp(proto, "stss", 4) == 0)
+		stss_init(proto, app_proto);
 	else {
 		lancet_fprintf(stderr, "Unknown application protocol\n");
 		return NULL;

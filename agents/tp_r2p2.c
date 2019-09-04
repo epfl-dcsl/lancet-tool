@@ -173,7 +173,7 @@ static void throughput_r2p2_main(void)
 			add_tx_timestamp(&tx_timestamp);
 
 			// send msg
-			r2p2_send_req(&to_send->iovs[0], 1, ctx);
+			r2p2_send_req(to_send->iovs, to_send->iov_cnt, ctx);
 
 			/* Bookkeeping */
 			send_res.bytes = to_send->iovs[0].iov_len;
@@ -397,7 +397,7 @@ static void symmetric_nic_r2p2_main(void)
 			ctx->routing_policy = (int)(unsigned long)to_send->meta;
 
 			// send msg
-			r2p2_send_req(&to_send->iovs[0], 1, ctx);
+			r2p2_send_req(to_send->iovs, to_send->iov_cnt, ctx);
 
 			/* Bookkeeping */
 			send_res.bytes = to_send->iovs[0].iov_len;
@@ -460,7 +460,7 @@ static void symmetric_r2p2_main(void)
 			ctx->routing_policy = (int)(unsigned long)to_send->meta;
 
 			// send msg
-			r2p2_send_req(&to_send->iovs[0], 1, ctx);
+			r2p2_send_req(to_send->iovs, to_send->iov_cnt, ctx);
 
 			/* Bookkeeping */
 			send_res.bytes = to_send->iovs[0].iov_len;
