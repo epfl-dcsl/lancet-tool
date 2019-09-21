@@ -163,6 +163,7 @@ memcache_bin_consume_response(struct application_protocol *proto,
 	int bytes_to_process, state;
 	struct bmc_header *bmc_header;
 	char *buf;
+	long body_len;
 
 	res.bytes = 0;
 	res.reqs = 0;
@@ -178,20 +179,20 @@ memcache_bin_consume_response(struct application_protocol *proto,
 				goto OUT;
 			bmc_header =
 				(struct bmc_header *)&buf[resp->iov_len - bytes_to_process];
-			bmc_header->body_len = ntohl(bmc_header->body_len);
+			body_len = ntohl(bmc_header->body_len);
 			state = WAIT_FOR_BODY;
 			break;
 		case WAIT_FOR_BODY:
 			if (bytes_to_process <
-				(bmc_header->body_len + sizeof(struct bmc_header)))
+				(body_len + sizeof(struct bmc_header)))
 				goto OUT;
 			state = FINISHED;
 			break;
 		case FINISHED:
 			bytes_to_process -=
-				(bmc_header->body_len + sizeof(struct bmc_header));
+				(body_len + sizeof(struct bmc_header));
 			res.reqs += 1;
-			res.bytes += (sizeof(struct bmc_header) + bmc_header->body_len);
+			res.bytes += (sizeof(struct bmc_header) + body_len);
 			state = WAIT_FOR_HEADER;
 			break;
 		}
