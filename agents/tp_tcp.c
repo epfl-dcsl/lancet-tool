@@ -279,6 +279,7 @@ static void throughput_tcp_main(void)
 	struct byte_req_pair read_res;
 	struct byte_req_pair send_res;
 	struct timespec tx_timestamp;
+	int start_iov = 0;
 
 	if (throughput_open_connections())
 		return;
@@ -301,12 +302,26 @@ static void throughput_tcp_main(void)
 			bytes_to_send = 0;
 			for (i = 0; i < to_send->iov_cnt; i++)
 				bytes_to_send += to_send->iovs[i].iov_len;
-			ret = writev(conn->fd, to_send->iovs, to_send->iov_cnt);
-			if ((ret < 0) && (errno != EWOULDBLOCK)) {
-				lancet_perror("Unknown connection error write\n");
-				return;
+			while (1) {
+				ret = writev(conn->fd, &to_send->iovs[start_iov], to_send->iov_cnt);
+				if ((ret < 0) && (errno != EWOULDBLOCK)) {
+					lancet_perror("Unknown connection error write\n");
+					return;
+				}
+				if (ret == bytes_to_send)
+					break;
+				bytes_to_send -= ret;
+				for (i = start_iov; i < start_iov + to_send->iov_cnt; i++) {
+					if (ret < to_send->iovs[i].iov_len) {
+						to_send->iovs[i].iov_len -= ret;
+						to_send->iovs[i].iov_base += ret;
+						break;
+					}
+					ret -= to_send->iovs[i].iov_len;
+					to_send->iov_cnt--;
+				}
+				start_iov = i;
 			}
-			assert(ret == bytes_to_send);
 			conn->pending_reqs++;
 			time_ns_to_ts(&tx_timestamp);
 			add_tx_timestamp(&tx_timestamp);
