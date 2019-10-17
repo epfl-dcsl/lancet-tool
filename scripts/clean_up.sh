@@ -22,7 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-dirname=${2:-/tmp/`whoami`/lancet}
+dirname=${2:-/tmp/`whoami`}/lancet
 for hostname in `IFS=',' inarr=($1) && echo ${inarr[@]}`; do
 	ssh $hostname rm -rf $dirname
 done
