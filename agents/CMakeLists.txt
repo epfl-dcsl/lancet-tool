@@ -25,6 +25,8 @@ project( Agent
   VERSION 1.0.0
   DESCRIPTION "Agent for Lancet")
 
+set(CMAKE_C_FLAGS_RELEASEASSERT "-O3")
+
 # first, lets find the flags we need
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
