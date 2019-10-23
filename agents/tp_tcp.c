@@ -410,28 +410,33 @@ static void latency_tcp_main(void)
 		send_res.reqs = 1;
 		add_throughput_tx_sample(send_res);
 
-		ret = recv(conn->fd, conn->buffer, MAX_PAYLOAD, 0);
-		if (ret < 0) {
-			lancet_perror("Error read\n");
-			return;
-		}
-		if (ret == 0) {
-			close(conn->fd);
-			lancet_fprintf(stderr, "Connection closed\n");
-			conn->closed = 1;
-			continue;
-		}
-		conn->buffer_idx = ret;
-		read_res = handle_response(conn);
-		if (read_res.reqs > 0) {
-			end_time = time_ns();
-			/*BookKeeping*/
-			add_throughput_rx_sample(read_res);
-			add_latency_sample((end_time - start_time), NULL);
+		assert(conn->buffer_idx == 0);
+		do {
+			assert(MAX_PAYLOAD - conn->buffer_idx > 0);
+			ret = recv(conn->fd, &conn->buffer[conn->buffer_idx], MAX_PAYLOAD - conn->buffer_idx, 0);
+			if (ret < 0) {
+				lancet_perror("Error read\n");
+				return;
+			}
+			if (ret == 0) {
+				close(conn->fd);
+				lancet_fprintf(stderr, "Connection closed\n");
+				conn->closed = 1;
+				continue;
+			}
 
-			/*Schedule next*/
-			next_tx += get_ia();
-		}
+			conn->buffer_idx += ret;
+			read_res = handle_response(conn);
+			if (read_res.reqs > 0) {
+				end_time = time_ns();
+				/*BookKeeping*/
+				add_throughput_rx_sample(read_res);
+				add_latency_sample((end_time - start_time), NULL);
+
+				/*Schedule next*/
+				next_tx += get_ia();
+			}
+		} while (conn->buffer_idx);
 	}
 }
 
