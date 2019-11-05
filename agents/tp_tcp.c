@@ -29,6 +29,7 @@
 #include <math.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -287,6 +288,9 @@ static void throughput_tcp_main(void)
 	/*Initializations*/
 	conn_per_thread = get_conn_count() / get_thread_count();
 	events = malloc(conn_per_thread * sizeof(struct epoll_event));
+
+	pthread_barrier_wait(&conn_open_barrier);
+	set_conn_open(1);
 
 	next_tx = time_ns();
 	while (1) {

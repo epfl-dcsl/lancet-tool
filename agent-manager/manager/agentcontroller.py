@@ -44,6 +44,7 @@ class AgentControlBlock(ctypes.Structure):
         ('agent_type', ctypes.c_int),
         ('sample_count', ctypes.c_uint32),
         ('sampling_rate', ctypes.c_double),
+        ('conn_open', ctypes.c_int),
     ]
 
 class Timespec(ctypes.Structure):
@@ -138,6 +139,9 @@ class LancetController:
         self.acb.sample_count = int(sample_count / self.acb.thread_count)
         self.acb.sampling_rate = sampling_rate / 100.0
         self.acb.should_measure = 1
+
+    def get_conn_open(self):
+        return self.acb.conn_open
 
     def terminate(self):
         self.agent.kill()

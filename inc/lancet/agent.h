@@ -72,6 +72,7 @@ struct __attribute__((packed)) agent_control_block {
 	int agent_type;
 	uint32_t per_thread_samples;
 	double sampling;
+	int conn_open;
 };
 
 int should_load(void);
@@ -88,5 +89,8 @@ uint32_t get_per_thread_samples(void);
 double get_sampling_rate(void);
 char *get_if_name(void);
 int get_max_pending_reqs(void);
+void set_conn_open(int val);
 struct request *prepare_request(void);
 struct byte_req_pair process_response(char *buf, int size);
+
+extern pthread_barrier_t conn_open_barrier;

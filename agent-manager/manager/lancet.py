@@ -106,6 +106,8 @@ class LancetServer:
             else:
                 print("Unknown report msg")
                 return -1
+        elif msg.msg_type == 3:
+            self.proto.reply_value(self.controller.get_conn_open())
         elif msg.msg_type == -1:
             return -1
         return 0

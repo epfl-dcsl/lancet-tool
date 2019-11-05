@@ -45,6 +45,7 @@ static struct agent_control_block *acb;
 static __thread struct request to_send;
 static __thread struct iovec received;
 static __thread int thread_idx;
+pthread_barrier_t conn_open_barrier;
 
 int should_load(void)
 {
@@ -109,6 +110,11 @@ char *get_if_name(void)
 int get_max_pending_reqs(void)
 {
 	return cfg->per_conn_reqs;
+}
+
+void set_conn_open(int val)
+{
+	acb->conn_open = val;
 }
 
 struct request *prepare_request(void)
@@ -202,6 +208,9 @@ int main(int argc, char **argv)
 		lancet_fprintf(stderr, "Failed to allocate tids\n");
 		exit(-1);
 	}
+
+	int ret = pthread_barrier_init(&conn_open_barrier, NULL, cfg->thread_count);
+	assert(!ret);
 
 	for (i = 1; i < cfg->thread_count; i++) {
 		if (pthread_create(&tids[i], NULL, agent_main, (void *)(long)i)) {
