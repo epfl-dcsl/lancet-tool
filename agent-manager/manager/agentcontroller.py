@@ -104,8 +104,15 @@ class LancetController:
         launch_args = [str(args.agent.as_posix())] + shlex.split(" ".join(args.agent_args))
         log.debug("Agent launch command: \"{}\"".format(launch_args))
         self.agent = subprocess.Popen(launch_args)
-        time.sleep(1)
-        shm = posix_ipc.SharedMemory('/lancetcontrol', 0)
+        shm = None
+        for i in range(10):
+            time.sleep(1)
+            try:
+                shm = posix_ipc.SharedMemory('/lancetcontrol', 0)
+            except posix_ipc.ExistentialError:
+                continue
+            break
+        assert shm is not None
         buffer = mmap.mmap(shm.fd, ctypes.sizeof(AgentControlBlock),
                 mmap.MAP_SHARED, mmap.PROT_WRITE)
         self.acb = AgentControlBlock.from_buffer(buffer)
