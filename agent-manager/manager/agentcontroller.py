@@ -44,6 +44,7 @@ class AgentControlBlock(ctypes.Structure):
         ('agent_type', ctypes.c_int),
         ('sample_count', ctypes.c_uint32),
         ('sampling_rate', ctypes.c_double),
+        ('conn_open', ctypes.c_int),
     ]
 
 class Timespec(ctypes.Structure):
@@ -103,8 +104,15 @@ class LancetController:
         launch_args = [str(args.agent.as_posix())] + shlex.split(" ".join(args.agent_args))
         log.debug("Agent launch command: \"{}\"".format(launch_args))
         self.agent = subprocess.Popen(launch_args)
-        time.sleep(1)
-        shm = posix_ipc.SharedMemory('/lancetcontrol', 0)
+        shm = None
+        for i in range(10):
+            time.sleep(1)
+            try:
+                shm = posix_ipc.SharedMemory('/lancetcontrol', 0)
+            except posix_ipc.ExistentialError:
+                continue
+            break
+        assert shm is not None
         buffer = mmap.mmap(shm.fd, ctypes.sizeof(AgentControlBlock),
                 mmap.MAP_SHARED, mmap.PROT_WRITE)
         self.acb = AgentControlBlock.from_buffer(buffer)
@@ -138,6 +146,9 @@ class LancetController:
         self.acb.sample_count = int(sample_count / self.acb.thread_count)
         self.acb.sampling_rate = sampling_rate / 100.0
         self.acb.should_measure = 1
+
+    def get_conn_open(self):
+        return self.acb.conn_open
 
     def terminate(self):
         self.agent.kill()

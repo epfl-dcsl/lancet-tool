@@ -70,6 +70,29 @@ func collectAcks(agents []*agent) error {
 	return nil
 }
 
+func collectValues(agents []*agent) ([]int, error) {
+	ret := make([]int, len(agents))
+
+	// Wait for value with a 2 second deadline
+	timeOut := 500 * time.Millisecond
+	for i, a := range agents {
+		a.conn.SetReadDeadline(time.Now().Add(timeOut))
+		reply := &C.struct_msg1{}
+		data := make([]byte, 64)
+		_, err := a.conn.Read(data)
+		if err != nil {
+			return nil, fmt.Errorf("Read from agent failed: %v\n", err)
+		}
+		r := bytes.NewReader(data)
+		err = binary.Read(r, binary.LittleEndian, reply)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing value: %v\n", err)
+		}
+		ret[i] = int(reply.Info)
+	}
+	return ret, nil
+}
+
 func collectThroughputResults(agents []*agent) ([]*C.struct_throughput_reply, error) {
 	result := make([]*C.struct_throughput_reply, 0)
 	timeOut := 500 * time.Millisecond
@@ -259,4 +282,33 @@ func reportLatency(agents []*agent) ([]*C.struct_latency_reply, error) {
 		return nil, err
 	}
 	return collectLatencyResults(agents)
+}
+
+func check_conn_open(agents []*agent) (bool, error) {
+	msg := C.struct_msg1{
+		Hdr: C.struct_msg_hdr{
+			MessageType:   C.uint32_t(C.CONN_OPEN),
+			MessageLength: C.uint32_t(4),
+		},
+		Info: C.uint32_t(0),
+	}
+	buf := &bytes.Buffer{}
+	err := binary.Write(buf, binary.LittleEndian, msg)
+	if err != nil {
+		return false, fmt.Errorf("Error formating message: %v", err)
+	}
+	err = broadcastMessage(buf, agents)
+	if err != nil {
+		return false, err
+	}
+	conn_open, err := collectValues(agents)
+	if err != nil {
+		return false, err
+	}
+	for _, c := range conn_open {
+		if c == 0 {
+			return false, nil
+		}
+	}
+	return true, nil
 }

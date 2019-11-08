@@ -35,6 +35,7 @@ enum {
 	REPORT_REQ,
 	REPLY,
 	TERMINATE,
+	CONN_OPEN,
 };
 
 /*

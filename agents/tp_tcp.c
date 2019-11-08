@@ -29,6 +29,7 @@
 #include <math.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -279,6 +280,7 @@ static void throughput_tcp_main(void)
 	struct byte_req_pair read_res;
 	struct byte_req_pair send_res;
 	struct timespec tx_timestamp;
+	int start_iov = 0;
 
 	if (throughput_open_connections())
 		return;
@@ -286,6 +288,9 @@ static void throughput_tcp_main(void)
 	/*Initializations*/
 	conn_per_thread = get_conn_count() / get_thread_count();
 	events = malloc(conn_per_thread * sizeof(struct epoll_event));
+
+	pthread_barrier_wait(&conn_open_barrier);
+	set_conn_open(1);
 
 	next_tx = time_ns();
 	while (1) {
@@ -301,12 +306,26 @@ static void throughput_tcp_main(void)
 			bytes_to_send = 0;
 			for (i = 0; i < to_send->iov_cnt; i++)
 				bytes_to_send += to_send->iovs[i].iov_len;
-			ret = writev(conn->fd, to_send->iovs, to_send->iov_cnt);
-			if ((ret < 0) && (errno != EWOULDBLOCK)) {
-				lancet_perror("Unknown connection error write\n");
-				return;
+			while (1) {
+				ret = writev(conn->fd, &to_send->iovs[start_iov], to_send->iov_cnt);
+				if ((ret < 0) && (errno != EWOULDBLOCK)) {
+					lancet_perror("Unknown connection error write\n");
+					return;
+				}
+				if (ret == bytes_to_send)
+					break;
+				bytes_to_send -= ret;
+				for (i = start_iov; i < start_iov + to_send->iov_cnt; i++) {
+					if (ret < to_send->iovs[i].iov_len) {
+						to_send->iovs[i].iov_len -= ret;
+						to_send->iovs[i].iov_base += ret;
+						break;
+					}
+					ret -= to_send->iovs[i].iov_len;
+					to_send->iov_cnt--;
+				}
+				start_iov = i;
 			}
-			assert(ret == bytes_to_send);
 			conn->pending_reqs++;
 			time_ns_to_ts(&tx_timestamp);
 			add_tx_timestamp(&tx_timestamp);
@@ -395,28 +414,33 @@ static void latency_tcp_main(void)
 		send_res.reqs = 1;
 		add_throughput_tx_sample(send_res);
 
-		ret = recv(conn->fd, conn->buffer, MAX_PAYLOAD, 0);
-		if (ret < 0) {
-			lancet_perror("Error read\n");
-			return;
-		}
-		if (ret == 0) {
-			close(conn->fd);
-			lancet_fprintf(stderr, "Connection closed\n");
-			conn->closed = 1;
-			continue;
-		}
-		conn->buffer_idx = ret;
-		read_res = handle_response(conn);
-		if (read_res.reqs > 0) {
-			end_time = time_ns();
-			/*BookKeeping*/
-			add_throughput_rx_sample(read_res);
-			add_latency_sample((end_time - start_time), NULL);
+		assert(conn->buffer_idx == 0);
+		do {
+			assert(MAX_PAYLOAD - conn->buffer_idx > 0);
+			ret = recv(conn->fd, &conn->buffer[conn->buffer_idx], MAX_PAYLOAD - conn->buffer_idx, 0);
+			if (ret < 0) {
+				lancet_perror("Error read\n");
+				return;
+			}
+			if (ret == 0) {
+				close(conn->fd);
+				lancet_fprintf(stderr, "Connection closed\n");
+				conn->closed = 1;
+				continue;
+			}
 
-			/*Schedule next*/
-			next_tx += get_ia();
-		}
+			conn->buffer_idx += ret;
+			read_res = handle_response(conn);
+			if (read_res.reqs > 0) {
+				end_time = time_ns();
+				/*BookKeeping*/
+				add_throughput_rx_sample(read_res);
+				add_latency_sample((end_time - start_time), NULL);
+
+				/*Schedule next*/
+				next_tx += get_ia();
+			}
+		} while (conn->buffer_idx);
 	}
 }
 

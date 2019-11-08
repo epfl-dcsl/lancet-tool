@@ -115,6 +115,10 @@ class LancetProto:
             buf = ctypes.create_string_buffer(data)
             report_type = ctypes.c_uint32.from_buffer(buf)
             lancet_msg = MsgInternal(2, report_type.value)
+        elif msg.MessageType == 5: # CONN_OPEN
+            data = self.conn.recv(4)
+            assert len(data) == 4
+            lancet_msg = MsgInternal(3, None)
         else:
             assert False
         return lancet_msg
@@ -124,6 +128,13 @@ class LancetProto:
         msg.MessageType = 3 # Reply
         msg.MessageLength = 4
         msg.Info = 0 # REPLY_ACK
+        self.conn.send(msg)
+
+    def reply_value(self, value):
+        msg = Msg1()
+        msg.MessageType = 3 # Reply
+        msg.MessageLength = 4
+        msg.Info = value
         self.conn.send(msg)
 
     def reply_throughput(self, stats):

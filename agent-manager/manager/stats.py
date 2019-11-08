@@ -21,6 +21,7 @@
 # SOFTWARE.
 import numpy
 import math
+import sys
 from scipy.stats import spearmanr, anderson, kstest, ks_2samp
 from statsmodels.tsa.stattools import adfuller
 
@@ -112,7 +113,11 @@ def check_stationarity(all_latency_stats, per_thread_samples):
     data.sort(key=lambda x: x[1])
     latencies = list(map(lambda x: x[0], data))
 
-    adf_res = adfuller(latencies)
+    try:
+        adf_res = adfuller(latencies)
+    except ValueError as e:
+        print("adfuller error {} {}".format(len(latencies), e), file=sys.stderr)
+        return False
     return adf_res[0] < 0
 
 def aggregate_throughput(stats):

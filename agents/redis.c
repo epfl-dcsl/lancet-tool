@@ -45,16 +45,16 @@ int static parse_string(char *buf, int bytes_left)
 	int processed = 0;
 	char *p;
 
-	if (bytes_left == 0)
+	if (bytes_left < 1)
 		return processed;
 
 	assert(buf[0] == '+');
 
-	p = strchr(buf, '\r');
+	p = memchr(buf, '\n', bytes_left);
 	if (!p)
 		return processed;
 
-	processed = p - buf + 2;
+	processed = p - buf + 1;
 	return processed;
 }
 
@@ -63,10 +63,12 @@ int static parse_bulk_string(char *buf, int bytes_left)
 	int len, processed = 0, extra;
 	char *p;
 
-	if (bytes_left == 0)
+	if (bytes_left < 1)
 		return processed;
 
-	p = strchr(buf, '\r');
+	assert(buf[0] == '$');
+
+	p = memchr(buf, '\n', bytes_left);
 	if (!p)
 		return processed;
 
@@ -74,7 +76,7 @@ int static parse_bulk_string(char *buf, int bytes_left)
 	if (len == -1)
 		processed = 5; // key not found
 	else {
-		extra = 1 + 2 + 2 + (p - buf - 1);
+		extra = p - buf + 1 + 2;
 		if ((len + extra) <= bytes_left)
 			processed = len + extra;
 	}
