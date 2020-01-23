@@ -280,7 +280,7 @@ static void throughput_tcp_main(void)
 	struct byte_req_pair read_res;
 	struct byte_req_pair send_res;
 	struct timespec tx_timestamp;
-	int start_iov = 0;
+	int start_iov;
 
 	if (throughput_open_connections())
 		return;
@@ -304,6 +304,7 @@ static void throughput_tcp_main(void)
 				goto REP_PROC;
 			to_send = prepare_request();
 			bytes_to_send = 0;
+			start_iov = 0;
 			for (i = 0; i < to_send->iov_cnt; i++)
 				bytes_to_send += to_send->iovs[i].iov_len;
 			while (1) {
@@ -312,6 +313,8 @@ static void throughput_tcp_main(void)
 					lancet_perror("Unknown connection error write\n");
 					return;
 				}
+				if (ret < 0)
+					continue;
 				if (ret == bytes_to_send)
 					break;
 				bytes_to_send -= ret;
@@ -322,8 +325,8 @@ static void throughput_tcp_main(void)
 						break;
 					}
 					ret -= to_send->iovs[i].iov_len;
-					to_send->iov_cnt--;
 				}
+				to_send->iov_cnt -= i - start_iov;
 				start_iov = i;
 			}
 			conn->pending_reqs++;
