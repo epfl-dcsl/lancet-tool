@@ -95,7 +95,7 @@ func collectValues(agents []*agent) ([]int, error) {
 
 func collectThroughputResults(agents []*agent) ([]*C.struct_throughput_reply, error) {
 	result := make([]*C.struct_throughput_reply, 0)
-	timeOut := 500 * time.Millisecond
+	timeOut := 5000 * time.Millisecond
 	for _, a := range agents {
 		a.conn.SetReadDeadline(time.Now().Add(timeOut))
 		reply := &C.struct_throughput_reply{}
