@@ -54,6 +54,8 @@ void lancet_success_nic_timestamping_cb(long handle, void *arg,
 	read_res.reqs = 1;
 	add_throughput_rx_sample(read_res);
 
+	//printf("I received %d bytes\n", read_res.bytes);
+
 	ctx = (struct r2p2_ctx *)arg;
 	ret = timespec_diff(&latency, &ctx->rx_timestamp, &ctx->tx_timestamp);
 
@@ -120,11 +122,13 @@ void lancet_success_cb(long handle, void *arg, struct iovec *iov, int iovcnt)
 
 void lancet_error_cb(void *arg, int err)
 {
+	//lancet_fprintf(stderr, "Error cb %d\n", err);
 	free(arg);
 }
 
 void lancet_timeout_cb(void *arg)
 {
+	//lancet_fprintf(stderr, "Request timeout\n");
 	free(arg);
 }
 
@@ -369,6 +373,7 @@ static void symmetric_nic_r2p2_main(void)
 	targets = (struct r2p2_host_tuple *)get_targets();
 	target_count = get_target_count();
 	next_tx = time_ns();
+	ctx = malloc(sizeof(struct r2p2_ctx));
 	while (1) {
 		if (!should_load()) {
 			next_tx = time_ns();
@@ -376,10 +381,12 @@ static void symmetric_nic_r2p2_main(void)
 		}
 		diff = time_ns() - next_tx;
 		if (diff >= 0) {
+			// schedule next
+			next_tx += get_ia();
+
 			// prepare msg to be sent
 			to_send = prepare_request();
 			// prepare ctx
-			ctx = malloc(sizeof(struct r2p2_ctx));
 			assert(ctx);
 			ctx->success_cb = lancet_success_nic_timestamping_cb;
 			ctx->error_cb = lancet_error_cb;
@@ -397,19 +404,21 @@ static void symmetric_nic_r2p2_main(void)
 			else
 				ctx->destination = &targets[rand() % target_count];
 			ctx->arg = (void *)ctx;
-			ctx->timeout = 5000000;
+			ctx->timeout = 1000000;
 			ctx->routing_policy = (int)(unsigned long)to_send->meta;
 
 			// send msg
 			r2p2_send_req(to_send->iovs, to_send->iov_cnt, ctx);
 
 			/* Bookkeeping */
-			send_res.bytes = to_send->iovs[0].iov_len;
+			bzero(&send_res, sizeof(struct byte_req_pair));
+			for (int i=0;i<to_send->iov_cnt;i++)
+				send_res.bytes += to_send->iovs[i].iov_len;
 			send_res.reqs = 1;
 			add_throughput_tx_sample(send_res);
 
-			// schedule next
-			next_tx += get_ia();
+			// malloc for the next
+			ctx = malloc(sizeof(struct r2p2_ctx));
 		}
 
 		// poll for responses
