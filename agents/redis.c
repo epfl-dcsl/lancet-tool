@@ -36,8 +36,8 @@
 #define YCSBE_SCAN_RATIO 0.95
 #define YCSBE_INSERT_RATIO 0.05
 #define YCSBE_KEY_COUNT 1000000
-#define YCSBE_MAX_SCAN_LEN 100
-#define YCSBE_FIELD_COUNT 2
+#define YCSBE_MAX_SCAN_LEN 10
+#define YCSBE_FIELD_COUNT 10
 #define YCSBE_FIELD_SIZE 100
 
 struct ycsbe_info {
@@ -47,6 +47,7 @@ struct ycsbe_info {
 	int scan_len;
 	int field_count;
 	int field_size;
+	int replicated;
 	char *fixed_req_body;
 };
 
@@ -257,12 +258,12 @@ static int redis_ycsbe_create_request(struct application_protocol *proto,
 	info = (struct ycsbe_info *)proto->arg;
 
 	key = rand() % info->key_count;
-	sprintf(ycsbe_key, " %d ", key);
+	sprintf(ycsbe_key, "%d ", key);
 
 	if (drand48()<=info->scan_ratio) {
 		// perform a scan
 		scan_count = rand() % info->scan_len + 1;
-		sprintf(ycsbe_scan, " %d\n", scan_count);
+		sprintf(ycsbe_scan, "%d\n", scan_count);
 
 		req->iovs[0].iov_base = ycsbe_scan_prem;
 		req->iovs[0].iov_len = 11;
@@ -280,17 +281,13 @@ static int redis_ycsbe_create_request(struct application_protocol *proto,
 		req->iovs[2].iov_base = info->fixed_req_body;
 		req->iovs[2].iov_len = info->field_count*(info->field_size+1);
 		req->iov_cnt = 3;
+		if (info->replicated)
+			req->meta = (void *)(unsigned long)2; // replicated route side effects
+		else
+			req->meta = NULL;
 	}
 
 	return 0;
-}
-
-static struct byte_req_pair redis_ycsbe_consume_response(struct application_protocol *proto,
-											struct iovec *resp)
-{
-	struct byte_req_pair res;
-
-	return res;
 }
 
 static int init_redis_ycsbe(char *proto, struct application_protocol *app_proto)
@@ -310,19 +307,22 @@ static int init_redis_ycsbe(char *proto, struct application_protocol *app_proto)
 	yinfo->field_size = YCSBE_FIELD_SIZE;
 	yinfo->fixed_req_body = malloc(yinfo->field_count*(yinfo->field_size+1));
 	assert(yinfo->fixed_req_body);
+	if (strncmp("redis-ycsber", proto, 12) == 0)
+		yinfo->replicated = 1;
+	else
+		yinfo->replicated = 0;
 
 	body = yinfo->fixed_req_body;
 	for (i=0;i<yinfo->field_count;i++) {
 		memset(body, 'x', yinfo->field_size);
-		body += yinfo->field_count;
+		body += yinfo->field_size;
 		*body++ = ' ';
 	}
 	*(body-1) = '\n';
 
-
 	app_proto->type = PROTO_REDIS_YCSBE;
 	app_proto->arg = yinfo;
-	app_proto->consume_response = redis_ycsbe_consume_response;
+	app_proto->consume_response = NULL;
 	app_proto->create_request = redis_ycsbe_create_request;
 
 	return 0;
