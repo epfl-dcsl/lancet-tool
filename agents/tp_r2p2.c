@@ -176,7 +176,9 @@ static void throughput_r2p2_main(void)
 			r2p2_send_req(to_send->iovs, to_send->iov_cnt, ctx);
 
 			/* Bookkeeping */
-			send_res.bytes = to_send->iovs[0].iov_len;
+			bzero(&send_res, sizeof(struct byte_req_pair));
+			for (int i=0;i<to_send->iov_cnt;i++)
+				send_res.bytes += to_send->iovs[i].iov_len;
 			send_res.reqs = 1;
 			add_throughput_tx_sample(send_res);
 
@@ -301,7 +303,9 @@ static void latency_r2p2_main(void)
 		}
 
 		/*BookKeeping*/
-		brp.bytes = to_send->iovs[0].iov_len;
+		bzero(&brp, sizeof(struct byte_req_pair));
+		for (int i=0;i<to_send->iov_cnt;i++)
+			brp.bytes += to_send->iovs[i].iov_len;
 		brp.reqs = 1;
 		add_throughput_tx_sample(brp);
 
@@ -463,7 +467,9 @@ static void symmetric_r2p2_main(void)
 			r2p2_send_req(to_send->iovs, to_send->iov_cnt, ctx);
 
 			/* Bookkeeping */
-			send_res.bytes = to_send->iovs[0].iov_len;
+			bzero(&send_res, sizeof(struct byte_req_pair));
+			for (int i=0;i<to_send->iov_cnt;i++)
+				send_res.bytes += to_send->iovs[i].iov_len;
 			send_res.reqs = 1;
 			add_throughput_tx_sample(send_res);
 			add_tx_timestamp(tx_timestamp);
