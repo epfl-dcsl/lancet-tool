@@ -33,6 +33,10 @@
 #include <lancet/error.h>
 #include <lancet/rand_gen.h>
 
+#ifdef ENABLE_R2P2
+#include <r2p2/api.h>
+#endif
+
 __thread void *per_thread_arg = NULL;
 char random_char[MAX_VAL_SIZE];
 
@@ -175,11 +179,14 @@ int stss_create_request(struct application_protocol *proto,
 	req->iovs[1].iov_len = req_payload[1];
 	req->iov_cnt = 2;
 	if (data->replicated) {
+#ifdef ENABLE_R2P2
 		if (drand48() <= data->read_ratio)
-			req->meta = (void *)(unsigned long)3; // replicated route no side effects
+			req->meta = (void *)(unsigned long)REPLICATED_ROUTE_NO_SE;
 		else
-			req->meta = (void *)(unsigned long)2; // replicated route side effects
-
+			req->meta = (void *)(unsigned long)REPLICATED_ROUTE;
+#else
+		assert(0);
+#endif
 	} else
 		req->meta = NULL;
 
@@ -196,8 +203,6 @@ struct byte_req_pair stss_consume_response(struct application_protocol *proto,
 	long *payload_size;
 	char *tmp;
 	int processed;
-
-	printf("Consume response\n");
 
 	assert(response->iov_len >= sizeof(long));
 	tmp = response->iov_base;
@@ -225,11 +230,11 @@ static int stss_init(char *proto, struct application_protocol *app_proto)
 
 	saveptr = proto;
 	token = strtok_r(saveptr, "_", &saveptr);
-	if (strncmp(token, "stss", 4) == 0)
-		data->replicated = 0;
-	else if (strncmp(token, "stssr", 5) == 0)
+	if (strncmp(token, "stssr", 5) == 0) {
 		data->replicated = 1;
-	else
+	} else if (strncmp(token, "stss", 4) == 0) {
+		data->replicated = 0;
+	} else
 		assert(0);
 	token = strtok_r(saveptr, "_", &saveptr);
 	data->time_gen = init_rand(token);

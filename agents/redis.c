@@ -33,6 +33,10 @@
 #include <lancet/key_gen.h>
 #include <lancet/rand_gen.h>
 
+#ifdef ENABLE_R2P2
+#include <r2p2/api.h>
+#endif
+
 #define YCSBE_SCAN_RATIO 0.95
 #define YCSBE_INSERT_RATIO 0.05
 #define YCSBE_KEY_COUNT 1000000
@@ -189,11 +193,17 @@ static int redis_kv_create_request(struct application_protocol *proto,
 		req->iovs[9].iov_len = 2;
 
 		req->iov_cnt = 10;
+#ifdef ENABLE_R2P2
+		req->meta = (void *)(unsigned long)FIXED_ROUTE;
+#endif
 	} else {
 		req->iovs[0].iov_base = get_prem;
 		req->iovs[0].iov_len = 14;
 
 		req->iov_cnt = 5;
+#ifdef ENABLE_R2P2
+		req->meta = (void *)(unsigned long)LB_ROUTE;
+#endif
 	}
 
 	return 0;
@@ -272,6 +282,15 @@ static int redis_ycsbe_create_request(struct application_protocol *proto,
 		req->iovs[2].iov_base = ycsbe_scan;
 		req->iovs[2].iov_len = strlen(ycsbe_scan);
 		req->iov_cnt = 3;
+
+		if (info->replicated) {
+#ifdef ENABLE_R2P2
+			req->meta = (void *)(unsigned long)REPLICATED_ROUTE_NO_SE;
+#else
+			assert(0);
+#endif
+		} else
+			req->meta = NULL;
 	} else {
 		// perform an insert
 		req->iovs[0].iov_base = ycsbe_insert_prem;
@@ -281,9 +300,14 @@ static int redis_ycsbe_create_request(struct application_protocol *proto,
 		req->iovs[2].iov_base = info->fixed_req_body;
 		req->iovs[2].iov_len = info->field_count*(info->field_size+1);
 		req->iov_cnt = 3;
-		if (info->replicated)
-			req->meta = (void *)(unsigned long)2; // replicated route side effects
-		else
+		if (info->replicated) {
+#ifdef ENABLE_R2P2
+			req->meta = (void *)(unsigned long)REPLICATED_ROUTE;
+#else
+			assert(0);
+#endif
+
+		} else
 			req->meta = NULL;
 	}
 

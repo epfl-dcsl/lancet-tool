@@ -75,7 +75,7 @@ target_link_libraries( loader PRIVATE rand )
 target_include_directories( loader PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" )
 target_compile_features( loader PUBLIC c_std_11 )
 target_compile_features( loader PUBLIC cxx_std_14 )
-target_compile_options( loader PRIVATE ${COMMON_CFLAGS} ${ENABLE_R2P2} )
+target_compile_options( loader PRIVATE ${COMMON_CFLAGS} )
 target_include_directories( loader PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" )
 
 add_executable( agent )

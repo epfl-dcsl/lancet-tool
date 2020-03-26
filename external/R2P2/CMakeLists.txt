@@ -45,7 +45,7 @@ else()
   message(FATAL_ERROR "R2P2_ROOT does not point to a directory: ${R2P2_ROOT}")
 endif()
 
-file(GLOB r2p2_sources ${R2P2_ROOT_DIR}/*.c)
+file(GLOB r2p2_sources ${R2P2_ROOT_DIR}/r2p2-common.c ${R2P2_ROOT_DIR}/mempool.c ${R2P2_ROOT_DIR}/cfg.c ${R2P2_ROOT_DIR}/linux-backend.c ${R2P2_ROOT_DIR}/timestamping.c)
 
 add_library( r2p2 OBJECT ${r2p2_sources} ) # Not sure if this or static
 target_include_directories( r2p2 PUBLIC ${R2P2_ROOT_DIR}/inc)
