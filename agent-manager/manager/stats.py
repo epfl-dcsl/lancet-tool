@@ -105,6 +105,7 @@ def check_interarrival(all_stats):
     return res[0] < 2*res[1][4]
 
 def check_stationarity(all_latency_stats, per_thread_samples):
+    return True
     data = []
     for s in all_latency_stats:
         sample_count = min(per_thread_samples, s.IncIdx)
