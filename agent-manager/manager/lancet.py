@@ -78,6 +78,12 @@ class LancetServer:
             msg = self.proto.recv_msg()
             res = self.process_msg(msg)
             if res == -1:
+                print("Lancet will terminate")
+                ret = self.controller.check_agent()
+                if ret:
+                    print("Agent failed with {}".format(ret))
+                else:
+                    print("Agent is running")
                 break
         self.proto.close()
         self.controller.terminate()
@@ -99,8 +105,11 @@ class LancetServer:
             elif msg.info == 1:
                 self.end_time = time.time()
                 latency_stats = self.controller.get_stats()
-                agg_stats = aggregate_latency(latency_stats,
-                                              self.controller.get_per_thread_samples())
+                try:
+                    agg_stats = aggregate_latency(latency_stats,
+                            self.controller.get_per_thread_samples())
+                except ValueError:
+                    return -1
                 agg_stats.duration = self.end_time - self.start_time
                 self.proto.reply_latency(agg_stats) # should pass something here
             else:

@@ -157,6 +157,9 @@ class LancetController:
         self.acb.should_measure = 0
         return self.thread_stats
 
+    def check_agent(self):
+        return self.agent.poll()
+
     def get_per_thread_samples(self):
         return self.acb.sample_count
 
