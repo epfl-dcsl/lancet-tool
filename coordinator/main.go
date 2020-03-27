@@ -66,9 +66,9 @@ func main() {
 
 	c.agentPort = expCfg.agentPort
 
-	var agentArgsMap map[string]string;
+	var agentArgsMap map[string]string
 	if generalCfg.printAgentArgs {
-		agentArgsMap = make(map[string]string);
+		agentArgsMap = make(map[string]string)
 	}
 
 	// Run throughput agents
@@ -77,7 +77,7 @@ func main() {
 		serverCfg.idist, serverCfg.comProto, serverCfg.appProto)
 	for i, a := range expCfg.thAgents {
 		if generalCfg.printAgentArgs {
-			agentArgsMap[a] = agentArgs;
+			agentArgsMap[a] = agentArgs
 		} else if generalCfg.runAgents {
 			session, err := runAgent(a, expCfg.privateKeyPath, agentArgs)
 			if err != nil {
@@ -95,7 +95,7 @@ func main() {
 		serverCfg.idist, serverCfg.comProto, serverCfg.appProto)
 	for i, a := range expCfg.ltAgents {
 		if generalCfg.printAgentArgs {
-			agentArgsMap[a] = ltArgs;
+			agentArgsMap[a] = ltArgs
 		} else if generalCfg.runAgents {
 			session, err := runAgent(a, expCfg.privateKeyPath, ltArgs)
 			if err != nil {
@@ -118,7 +118,7 @@ func main() {
 	}
 	for i, a := range expCfg.symAgents {
 		if generalCfg.printAgentArgs {
-			agentArgsMap[a] = symArgs;
+			agentArgsMap[a] = symArgs
 		} else if generalCfg.runAgents {
 			session, err := runAgent(a, expCfg.privateKeyPath, symArgs)
 			if err != nil {
@@ -191,6 +191,10 @@ func main() {
 	}
 
 	// Run experiment
+	c.shouldWaitConn = false
+	if serverCfg.comProto == "TCP" {
+		c.shouldWaitConn = true
+	}
 	err = c.runExp(expCfg.loadPattern, expCfg.ltRate, expCfg.ciSize)
 	if err != nil {
 		fmt.Println(err)

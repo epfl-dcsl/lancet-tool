@@ -35,14 +35,15 @@ import (
 
 type coordState int
 type coordinator struct {
-	thAgents     []*agent
-	ltAgents     []*agent
-	symAgents    []*agent
-	agentPort    int
-	samples      int
-	ciSize       int
-	state        coordState
-	samplingRate float64
+	thAgents       []*agent
+	ltAgents       []*agent
+	symAgents      []*agent
+	agentPort      int
+	samples        int
+	ciSize         int
+	state          coordState
+	samplingRate   float64
+	shouldWaitConn bool
 }
 
 const (
@@ -57,22 +58,23 @@ const (
 )
 
 func (c *coordinator) load(loadRate, latencyRate int) error {
-	ok := false
-
-	for i := 0; i < 60; i++ {
-		ret, err := check_conn_open(append(c.symAgents, c.thAgents...))
-		if err != nil {
-			return fmt.Errorf("Error waiting for connections: %v\n", err)
+	if c.shouldWaitConn {
+		ok := false
+		for i := 0; i < 60; i++ {
+			ret, err := check_conn_open(append(c.symAgents, c.thAgents...))
+			if err != nil {
+				return fmt.Errorf("Error waiting for connections: %v\n", err)
+			}
+			if ret {
+				ok = true
+				break
+			}
+			time.Sleep(1 * time.Second)
 		}
-		if ret {
-			ok = true
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
 
-	if !ok {
-		return fmt.Errorf("Connections didn't open within time limit\n")
+		if !ok {
+			return fmt.Errorf("Connections didn't open within time limit\n")
+		}
 	}
 
 	// Start loading
