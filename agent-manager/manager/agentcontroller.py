@@ -100,32 +100,36 @@ class LancetController:
         self.set_load_fn = extc.set_avg_ext
         self.thread_stats = []
 
+    def retry_open_shmem(self, path, tries=10, delay=1):
+        shm = None
+        for _i in range(tries):
+            try:
+                shm = posix_ipc.SharedMemory(path, 0)
+            except posix_ipc.ExistentialError:
+                time.sleep(delay)
+                continue
+            break
+        assert shm is not None, path
+        return shm
+
     def launch_agent(self, args):
         launch_args = [str(args.agent.as_posix())] + shlex.split(" ".join(args.agent_args))
         log.debug("Agent launch command: \"{}\"".format(launch_args))
         self.agent = subprocess.Popen(launch_args)
-        shm = None
-        for i in range(10):
-            time.sleep(1)
-            try:
-                shm = posix_ipc.SharedMemory('/lancetcontrol', 0)
-            except posix_ipc.ExistentialError:
-                continue
-            break
-        assert shm is not None
+        shm = self.retry_open_shmem('/lancetcontrol')
         buffer = mmap.mmap(shm.fd, ctypes.sizeof(AgentControlBlock),
                 mmap.MAP_SHARED, mmap.PROT_WRITE)
         self.acb = AgentControlBlock.from_buffer(buffer)
         # Map the stats
         if self.acb.agent_type == 0:
             for i in range(self.acb.thread_count):
-                shm = posix_ipc.SharedMemory('/lancet-stats{}'.format(i), 0)
+                shm = self.retry_open_shmem('/lancet-stats{}'.format(i))
                 buffer = mmap.mmap(shm.fd, ctypes.sizeof(ThroughputStats),
                         mmap.MAP_SHARED, mmap.PROT_WRITE)
                 self.thread_stats.append(ThroughputStats.from_buffer(buffer))
         elif (self.acb.agent_type == 1 or  self.acb.agent_type == 2 or self.acb.agent_type == 3):
             for i in range(self.acb.thread_count):
-                shm = posix_ipc.SharedMemory('/lancet-stats{}'.format(i), 0)
+                shm = self.retry_open_shmem('/lancet-stats{}'.format(i))
                 buffer = mmap.mmap(shm.fd, ctypes.sizeof(LatencyStats),
                         mmap.MAP_SHARED, mmap.PROT_WRITE)
                 self.thread_stats.append(LatencyStats.from_buffer(buffer))
