@@ -49,7 +49,7 @@ func broadcastMessage(msg *bytes.Buffer, agents []*agent) error {
 
 func collectAcks(agents []*agent) error {
 	// Wait for ACK with a 2 second deadline
-	timeOut := 500 * time.Millisecond
+	timeOut := 2000 * time.Millisecond
 	for _, a := range agents {
 		a.conn.SetReadDeadline(time.Now().Add(timeOut))
 		reply := &C.struct_msg1{}
@@ -74,7 +74,7 @@ func collectValues(agents []*agent) ([]int, error) {
 	ret := make([]int, len(agents))
 
 	// Wait for value with a 2 second deadline
-	timeOut := 500 * time.Millisecond
+	timeOut := 2000 * time.Millisecond
 	for i, a := range agents {
 		a.conn.SetReadDeadline(time.Now().Add(timeOut))
 		reply := &C.struct_msg1{}
@@ -159,7 +159,7 @@ func collectLatencyResults(agents []*agent) ([]*C.struct_latency_reply, error) {
 
 func collectConvergenceResults(agents []*agent) ([]int, error) {
 	// Wait for ACK with a 2 second deadline
-	timeOut := 500 * time.Millisecond
+	timeOut := 2000 * time.Millisecond
 	res := make([]int, len(agents))
 	for i, a := range agents {
 		a.conn.SetReadDeadline(time.Now().Add(timeOut))
