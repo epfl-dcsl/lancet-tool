@@ -324,8 +324,9 @@ static void latency_r2p2_main(void)
 			if (ret != -1) {
 				byte_count += ret;
 				r2p2h = (struct r2p2_header *)buf;
+				r2p2h->rid = ntohs(r2p2h->rid);
 				if (rid != r2p2h->rid) {
-					lancet_fprintf(stderr, "Wrong id");
+					lancet_fprintf(stderr, "Wrong id, expected:%d, got %d\n", rid, r2p2h->rid);
 					break;
 				}
 				if (is_last(r2p2h)) {
