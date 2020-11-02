@@ -467,6 +467,9 @@ static void symmetric_nic_tcp_main(void)
 	conn_per_thread = get_conn_count() / get_thread_count();
 	events = malloc(conn_per_thread * sizeof(struct epoll_event));
 
+	pthread_barrier_wait(&conn_open_barrier);
+	set_conn_open(1);
+
 	next_tx = time_ns();
 	while (1) {
 		if (!should_load()) {
@@ -598,6 +601,9 @@ static void symmetric_tcp_main(void)
 	/*Initializations*/
 	conn_per_thread = get_conn_count() / get_thread_count();
 	events = malloc(conn_per_thread * sizeof(struct epoll_event));
+
+	pthread_barrier_wait(&conn_open_barrier);
+	set_conn_open(1);
 
 	next_tx = time_ns();
 	while (1) {
