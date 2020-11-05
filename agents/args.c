@@ -155,7 +155,13 @@ struct agent_config *parse_arguments(int argc, char **argv)
 			abort();
 		}
 	}
-
+#ifdef ENABLE_R2P2
+	// Generators interfacing with R2P2 must use host endianness (except latency)
+	if (cfg->tp_type == R2P2 && cfg->atype != LATENCY_AGENT) {
+		for (int i=0;i<cfg->target_count;i++)
+			cfg->targets[i].ip = ntohl(cfg->targets[i].ip);
+	}
+#endif
 	cfg->tp = init_transport_protocol(cfg->tp_type);
 	if (!cfg->tp) {
 		lancet_fprintf(stderr, "Failed to init transport\n");

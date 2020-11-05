@@ -149,9 +149,6 @@ static void throughput_r2p2_main(void)
 
 	targets = (struct r2p2_host_tuple *)get_targets();
 	target_count = get_target_count();
-	// move to host order
-	for (int i=0;i<target_count;i++)
-		targets[i].ip = ntohl(targets[i].ip);
 
 	next_tx = time_ns();
 	while (1) {
@@ -377,8 +374,6 @@ static void symmetric_nic_r2p2_main(void)
 
 	targets = (struct r2p2_host_tuple *)get_targets();
 	target_count = get_target_count();
-	for (int i=0;i<target_count;i++)
-		targets[i].ip = ntohl(targets[i].ip);
 
 	next_tx = time_ns();
 	ctx = malloc(sizeof(struct r2p2_ctx));
@@ -452,8 +447,6 @@ static void symmetric_r2p2_main(void)
 
 	targets = (struct r2p2_host_tuple *)get_targets();
 	target_count = get_target_count();
-	for (int i=0;i<target_count;i++)
-		targets[i].ip = ntohl(targets[i].ip);
 
 	next_tx = time_ns();
 	while (1) {

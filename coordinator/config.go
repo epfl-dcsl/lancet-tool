@@ -69,7 +69,7 @@ func ParseConfig() (*ServerConfig, *ExperimentConfig, *GeneralConfig, error) {
 	var target = flag.String("targetHost", "127.0.0.1:8000", "host:port comma-separated list to run experiment against")
 	var thAgents = flag.String("loadAgents", "", "ip of loading agents separated by commas, e.g. ip1,ip2,...")
 	var ltAgents = flag.String("ltAgents", "", "ip of latency agents separated by commas, e.g. ip1,ip2,...")
-	var symAgents = flag.String("symAgents", "", "ip of latency agents separated by commas, e.g. ip1,ip2,...")
+	var symAgents = flag.String("symAgents", "", "ip of symmetric agents separated by commas, e.g. ip1,ip2,...")
 	var thThreads = flag.Int("loadThreads", 1, "loading threads per agent (used for load and sym agents)")
 	var ltThreads = flag.Int("ltThreads", 1, "latency threads per agent")
 	var thConn = flag.Int("loadConns", 1, "number of loading connections per agent")
