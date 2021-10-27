@@ -278,7 +278,7 @@ static void latency_r2p2_main(void)
 		bzero(&msg, sizeof(struct r2p2_msg));
 		policy = (int)(unsigned long)to_send->meta;
 		rid = rand();
-		r2p2_prepare_msg(&msg, &to_send->iovs[0], 1, REQUEST_MSG, policy, rid);
+		r2p2_prepare_msg(&msg, to_send->iovs, to_send->iov_cnt, REQUEST_MSG, policy, rid);
 		gb = msg.head_buffer;
 
 		// randomly pick conn
