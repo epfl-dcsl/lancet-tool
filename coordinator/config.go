@@ -76,7 +76,7 @@ func ParseConfig() (*ServerConfig, *ExperimentConfig, *GeneralConfig, error) {
 	var ltConn = flag.Int("ltConns", 1, "number of latency connections")
 	var idist = flag.String("idist", "exp", "interarrival distibution: fixed, exp")
 	var appProto = flag.String("appProto", "echo:4", "application protocol")
-	var comProto = flag.String("comProto", "TCP", "TCP|R2P2|UDP")
+	var comProto = flag.String("comProto", "TCP", "TCP|R2P2|UDP|TLS")
 	var ltRate = flag.Int("lqps", 4000, "latency qps")
 	var loadPattern = flag.String("loadPattern", "fixed:10000", "load pattern")
 	var ciSize = flag.Int("ciSize", 10, "size of 95-confidence interval in us")

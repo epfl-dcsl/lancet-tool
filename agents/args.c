@@ -46,6 +46,9 @@ init_transport_protocol(enum transport_protocol_type tp_type)
 	case UDP:
 		res = init_udp();
 		break;
+	case TLS:
+		res = init_tls();
+		break;
 #ifdef ENABLE_R2P2
 	case R2P2:
 		res = init_r2p2();
@@ -123,6 +126,8 @@ struct agent_config *parse_arguments(int argc, char **argv)
 #endif
 			else if (strcmp(optarg, "UDP") == 0)
 				cfg->tp_type = UDP;
+			else if (strcmp(optarg, "TLS") == 0)
+				cfg->tp_type = TLS;
 			else {
 				lancet_fprintf(stderr, "Unknown transport protocol\n");
 				return NULL;

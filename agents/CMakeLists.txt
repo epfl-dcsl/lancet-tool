@@ -32,6 +32,8 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_library(LIBRT rt REQUIRED)
 find_library(LIBM m REQUIRED)
+find_library(LIB_SSL ssl REQUIRED)
+find_library(LIB_CRYPTO crypto REQUIRED)
 
 find_library(LIBCONFIG config)
 if(NOT LIBM)
@@ -83,7 +85,7 @@ target_sources( agent PRIVATE
         ${RAND_SRCS}
         "agent.c" "args.c"
         "app_proto.c"
-        "tp_tcp.c" "tp_udp.c" "key_gen.c"
+        "tp_tcp.c" "tp_udp.c" "tp_ssl.c" "key_gen.c"
         "stats.c" "timestamping.c" "redis.c" "memcache.c"
         ${HTTP_SOURCES}
         ${R2P2_TP_SOURCE}
@@ -94,7 +96,7 @@ target_include_directories( agent PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" )
 target_link_libraries( agent PRIVATE lancet )
 target_compile_options(agent PRIVATE ${COMMON_CFLAGS} ${ENABLE_R2P2} ${ENABLE_R2P2_NIC_TS})
 target_link_libraries( agent PRIVATE
-  Threads::Threads ${LIBM} ${LIBRT} )
+  Threads::Threads ${LIBM} ${LIBRT} ${LIB_SSL} ${LIB_CRYPTO})
 if(BUILD_R2P2)
   target_link_libraries( agent PRIVATE r2p2 ${LIBCONFIG})
 endif()

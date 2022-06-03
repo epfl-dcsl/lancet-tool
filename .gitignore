@@ -6,6 +6,7 @@
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]
 [._]sw[a-p]
+tags
 
 # just this for emacs by default
 *~
@@ -40,6 +41,7 @@ agents/redis_loader
 agents/t_rpclib_agent
 agents/t_tcp_agent
 build/
+.eggs/
 
 # CLion default cmake build directories
 cmake-build-*/
