@@ -48,6 +48,7 @@ enum transport_protocol_type {
 	TCP,
 	R2P2,
 	UDP,
+	TLS,
 };
 
 struct agent_config {

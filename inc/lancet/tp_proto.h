@@ -29,6 +29,7 @@
 
 #include <lancet/agent.h>
 #include <lancet/stats.h>
+#include <openssl/ssl.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -41,6 +42,7 @@ struct transport_protocol *init_tcp(void);
 struct transport_protocol *init_r2p2(void);
 #endif
 struct transport_protocol *init_udp(void);
+struct transport_protocol *init_tls(void);
 
 /*
  * TCP specific
@@ -54,6 +56,7 @@ struct tcp_connection {
 	uint16_t buffer_idx;
 	char buffer[MAX_PAYLOAD];
 };
+struct byte_req_pair handle_response(struct tcp_connection *conn);
 
 /*
  * UDP specific
@@ -65,4 +68,12 @@ struct udp_socket {
 	struct timespec tx_timestamp;
 	struct timespec rx_timestamp;
 	char buffer[UDP_MAX_PAYLOAD];
+};
+
+/*
+ * TLS specific
+ */
+struct tls_connection {
+	struct tcp_connection conn;
+	SSL *ssl;
 };

@@ -232,44 +232,6 @@ static int throughput_open_connections(void)
 	return 0;
 }
 
-// this should contain all the logic for partial responses
-// so that BOTH the throughput and latency cases handle this correctly
-static inline struct byte_req_pair handle_response(struct tcp_connection *conn)
-{
-	struct byte_req_pair brp;
-	uint64_t brp_bytes;
-
-	brp = process_response(conn->buffer, conn->buffer_idx);
-	brp_bytes = brp.bytes;
-
-	if (brp_bytes == 0) {
-		assert(brp.reqs == 0);
-		if (conn->buffer_idx == MAX_PAYLOAD) {
-			lancet_fprintf(stderr, "partial request processed beyond max "
-								   "buffer size (%d). Need to make smaller "
-								   "requests or increase MAX_PAYLOAD.\n",
-						   MAX_PAYLOAD);
-			assert(0);
-		}
-		return brp;
-	} else if (brp_bytes == conn->buffer_idx) {
-		// consumed the whole response
-		conn->buffer_idx = 0;
-	} else if (brp_bytes > 0 && brp_bytes < conn->buffer_idx) {
-		size_t leftover_bytes = conn->buffer_idx - brp_bytes;
-		assert(leftover_bytes < MAX_PAYLOAD);
-		memmove(conn->buffer, &conn->buffer[brp_bytes], leftover_bytes);
-		conn->buffer_idx = leftover_bytes;
-	} else {
-		lancet_fprintf(stderr, "got a strange amount of response bytes (%lu) "
-							   "from total bytes (%d)",
-					   brp_bytes, conn->buffer_idx);
-		assert(0);
-	}
-	assert(brp.reqs > 0);
-	return brp;
-}
-
 static void throughput_tcp_main(void)
 {
 	int ready, idx, i, conn_per_thread, ret, bytes_to_send;
@@ -705,6 +667,44 @@ static void symmetric_tcp_main(void)
 				assert(0);
 		}
 	}
+}
+
+// this should contain all the logic for partial responses
+// so that BOTH the throughput and latency cases handle this correctly
+struct byte_req_pair handle_response(struct tcp_connection *conn)
+{
+	struct byte_req_pair brp;
+	uint64_t brp_bytes;
+
+	brp = process_response(conn->buffer, conn->buffer_idx);
+	brp_bytes = brp.bytes;
+
+	if (brp_bytes == 0) {
+		assert(brp.reqs == 0);
+		if (conn->buffer_idx == MAX_PAYLOAD) {
+			lancet_fprintf(stderr, "partial request processed beyond max "
+								   "buffer size (%d). Need to make smaller "
+								   "requests or increase MAX_PAYLOAD.\n",
+						   MAX_PAYLOAD);
+			assert(0);
+		}
+		return brp;
+	} else if (brp_bytes == conn->buffer_idx) {
+		// consumed the whole response
+		conn->buffer_idx = 0;
+	} else if (brp_bytes > 0 && brp_bytes < conn->buffer_idx) {
+		size_t leftover_bytes = conn->buffer_idx - brp_bytes;
+		assert(leftover_bytes < MAX_PAYLOAD);
+		memmove(conn->buffer, &conn->buffer[brp_bytes], leftover_bytes);
+		conn->buffer_idx = leftover_bytes;
+	} else {
+		lancet_fprintf(stderr, "got a strange amount of response bytes (%lu) "
+							   "from total bytes (%d)",
+					   brp_bytes, conn->buffer_idx);
+		assert(0);
+	}
+	assert(brp.reqs > 0);
+	return brp;
 }
 
 struct transport_protocol *init_tcp(void)
