@@ -397,6 +397,9 @@ static void latency_tcp_main(void)
 			conn->buffer_idx += ret;
 			read_res = handle_response(conn);
 			if (read_res.reqs > 0) {
+                                if (get_app_proto()->type == PROTO_MEMCACHED_BIN) {
+                                        assert(read_res.reqs == 1);
+                                }
 				end_time = time_ns();
 				/*BookKeeping*/
 				add_throughput_rx_sample(read_res);

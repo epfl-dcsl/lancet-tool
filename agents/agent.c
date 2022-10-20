@@ -72,6 +72,11 @@ int get_target_count(void)
 	return cfg->target_count;
 }
 
+struct application_protocol * get_app_proto(void)
+{
+        return cfg->app_proto;
+}
+
 struct host_tuple *get_targets(void)
 {
 	return cfg->targets;

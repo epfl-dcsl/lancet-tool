@@ -82,6 +82,7 @@ struct agent_config *parse_arguments(int argc, char **argv);
 int get_conn_count(void);
 int get_thread_count(void);
 int get_target_count(void);
+struct application_protocol * get_app_proto(void);
 struct host_tuple *get_targets(void);
 long get_ia(void);
 enum agent_type get_agent_type(void);
