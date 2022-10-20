@@ -59,6 +59,18 @@ func computeStatsLatency(replies []*C.struct_latency_reply) *C.struct_latency_re
 		agg_stats.P99_i += r.P99_i
 		agg_stats.P99 += r.P99
 		agg_stats.P99_k += r.P99_k
+		agg_stats.P999_i += r.P999_i
+		agg_stats.P999 += r.P999
+		agg_stats.P999_k += r.P999_k
+		agg_stats.P9999_i += r.P9999_i
+		agg_stats.P9999 += r.P9999
+		agg_stats.P9999_k += r.P9999_k
+		agg_stats.P99999_i += r.P99999_i
+		agg_stats.P99999 += r.P99999
+		agg_stats.P99999_k += r.P99999_k
+		agg_stats.P999999_i += r.P999999_i
+		agg_stats.P999999 += r.P999999
+		agg_stats.P999999_k += r.P999999_k
 		agg_stats.IsStationary += r.IsStationary
 		agg_stats.IsIid += r.IsIid
 	}
@@ -75,6 +87,18 @@ func computeStatsLatency(replies []*C.struct_latency_reply) *C.struct_latency_re
 	agg_stats.P99_i /= C.uint64_t(len(replies))
 	agg_stats.P99 /= C.uint64_t(len(replies))
 	agg_stats.P99_k /= C.uint64_t(len(replies))
+	agg_stats.P999_i /= C.uint64_t(len(replies))
+	agg_stats.P999 /= C.uint64_t(len(replies))
+	agg_stats.P999_k /= C.uint64_t(len(replies))
+	agg_stats.P9999_i /= C.uint64_t(len(replies))
+	agg_stats.P9999 /= C.uint64_t(len(replies))
+	agg_stats.P9999_k /= C.uint64_t(len(replies))
+	agg_stats.P99999_i /= C.uint64_t(len(replies))
+	agg_stats.P99999 /= C.uint64_t(len(replies))
+	agg_stats.P99999_k /= C.uint64_t(len(replies))
+	agg_stats.P999999_i /= C.uint64_t(len(replies))
+	agg_stats.P999999 /= C.uint64_t(len(replies))
+	agg_stats.P999999_k /= C.uint64_t(len(replies))
 
 	if agg_stats.IsIid == 0 {
 		agg_stats.ToReduceSampling = 1000000
@@ -89,6 +113,7 @@ func computeStatsLatency(replies []*C.struct_latency_reply) *C.struct_latency_re
 }
 
 func printThroughputStats(stats *C.struct_throughput_reply) {
+	fmt.Println("Next line includes both load and measurement")
 	fmt.Println("#ReqCount\tQPS\tRxBw\tTxBw")
 	fmt.Printf("%v\t%v\t%v\t%v\n", stats.Req_count,
 		1e6*float64(stats.Req_count)/float64(stats.Duration),
@@ -97,13 +122,17 @@ func printThroughputStats(stats *C.struct_throughput_reply) {
 }
 
 func printLatencyStats(stats *C.struct_latency_reply) {
-	fmt.Println("#Avg Lat\t50th\t90th\t95th\t99th")
-	fmt.Printf("%v\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\n",
+	fmt.Println("#Avg Lat\t50th\t90th\t95th\t99th\t99.9th\t99.99th\t99.999th\t99.9999th")
+	fmt.Printf("%v\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\t%v(%v, %v)\n",
 		float64(stats.Avg_lat)/1e3,
 		float64(stats.P50)/1e3, float64(stats.P50_i)/1e3, float64(stats.P50_k)/1e3,
 		float64(stats.P90)/1e3, float64(stats.P90_i)/1e3, float64(stats.P90_k)/1e3,
 		float64(stats.P95)/1e3, float64(stats.P95_i)/1e3, float64(stats.P95_k)/1e3,
-		float64(stats.P99)/1e3, float64(stats.P99_i)/1e3, float64(stats.P99_k)/1e3)
+		float64(stats.P99)/1e3, float64(stats.P99_i)/1e3, float64(stats.P99_k)/1e3,
+		float64(stats.P999)/1e3, float64(stats.P999_i)/1e3, float64(stats.P999_k)/1e3,
+		float64(stats.P9999)/1e3, float64(stats.P9999_i)/1e3, float64(stats.P9999_k)/1e3,
+		float64(stats.P99999)/1e3, float64(stats.P99999_i)/1e3, float64(stats.P99999_k)/1e3,
+		float64(stats.P999999)/1e3, float64(stats.P999999_i)/1e3, float64(stats.P999999_k)/1e3)
 }
 
 func getRPS(stats *C.struct_throughput_reply) float64 {

@@ -53,6 +53,18 @@ class LancetLatencyStats:
         self.P99i = 0
         self.P99 = 0
         self.P99k = 0
+        self.P999i = 0
+        self.P999 = 0
+        self.P999k = 0
+        self.P9999i = 0
+        self.P9999 = 0
+        self.P9999k = 0
+        self.P99999i = 0
+        self.P99999 = 0
+        self.P99999k = 0
+        self.P999999i = 0
+        self.P999999 = 0
+        self.P999999k = 0
         self.IsIID = 0
         self.ToReduce = 0
 
@@ -157,6 +169,14 @@ def aggregate_latency(stats, per_thread_samples):
     agg.P95i, agg.P95k = get_ci(all_samples, 0.95)
     agg.P99 = int(numpy.percentile(all_samples, 99))
     agg.P99i, agg.P99k = get_ci(all_samples, 0.99)
+    agg.P999 = int(numpy.percentile(all_samples, 99.9))
+    agg.P999i, agg.P999k = get_ci(all_samples, 0.999)
+    agg.P9999 = int(numpy.percentile(all_samples, 99.99))
+    agg.P9999i, agg.P9999k = get_ci(all_samples, 0.9999)
+    agg.P99999 = int(numpy.percentile(all_samples, 99.999))
+    agg.P99999i, agg.P99999k = get_ci(all_samples, 0.99999)
+    agg.P999999 = int(numpy.percentile(all_samples, 99.9999))
+    agg.P999999i, agg.P999999k = get_ci(all_samples, 0.999999)
     agg.is_stationary = check_stationarity(stats, per_thread_samples)
     is_iid, to_reduce = check_iid(stats, per_thread_samples)
     agg.IsIID = is_iid

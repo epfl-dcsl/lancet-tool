@@ -71,6 +71,18 @@ class LatencyReply(ctypes.Structure):
         ('P99i', ctypes.c_uint64),
         ('P99', ctypes.c_uint64),
         ('P99k', ctypes.c_uint64),
+        ('P999i', ctypes.c_uint64),
+        ('P999', ctypes.c_uint64),
+        ('P999k', ctypes.c_uint64),
+        ('P9999i', ctypes.c_uint64),
+        ('P9999', ctypes.c_uint64),
+        ('P9999k', ctypes.c_uint64),
+        ('P99999i', ctypes.c_uint64),
+        ('P99999', ctypes.c_uint64),
+        ('P99999k', ctypes.c_uint64),
+        ('P999999i', ctypes.c_uint64),
+        ('P999999', ctypes.c_uint64),
+        ('P999999k', ctypes.c_uint64),
         ('ToReduceSampling', ctypes.c_uint32),
         ('IsIID', ctypes.c_uint8),
         ('IsStationary', ctypes.c_uint8),
@@ -178,6 +190,18 @@ class LancetProto:
         reply.P99i = stats.P99i
         reply.P99 = stats.P99
         reply.P99k = stats.P99k
+        reply.P999i = stats.P999i
+        reply.P999 = stats.P999
+        reply.P999k = stats.P999k
+        reply.P9999i = stats.P9999i
+        reply.P9999 = stats.P9999
+        reply.P9999k = stats.P9999k
+        reply.P99999i = stats.P99999i
+        reply.P99999 = stats.P99999
+        reply.P99999k = stats.P99999k
+        reply.P999999i = stats.P999999i
+        reply.P999999 = stats.P999999
+        reply.P999999k = stats.P999999k
         reply.IsIID = stats.IsIID
         reply.ToReduceSampling = stats.ToReduce
         reply.IsStationary = stats.is_stationary
