@@ -243,7 +243,7 @@ static int memcache_bin_create_request(struct application_protocol *proto,
 		req->iov_cnt = 4;
 	} else {
 		// get
-		header.opcode = CMD_GET;
+		header.opcode = CMD_GETK;
 		header.extra_len = 0x00;
 		header.body_len = htonl(key->iov_len);
 
