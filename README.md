@@ -73,9 +73,9 @@ Usage of ./coordinator/coordinator:
   -ifName string
     	interface name for hardware timestamping (default "enp65s0")
   -loadAgents string
-    	ip of loading agents separated by commas, e.g. ip1,ip2,...
+    	ip of loading agents separated by commas, e.g. ip1,ip2,... (this can be specified along with symAgents.  These would add additional load)
   -loadConn int
-    	number of loading connections per agent (default 1)
+    	number of loading connections per agent (used for both load and sym agents) (default 1)
   -loadPattern string
     	load pattern (default "fixed:10000")
   -loadThreads int
@@ -93,7 +93,7 @@ Usage of ./coordinator/coordinator:
   -privateKey string
     	location of the (local) private key to deploy the agents. Will find a default if not specified (default "$HOME/.ssh/id_rsa")
   -reqPerConn int
-    	Number of outstanding requests per TCP connection (default 1)
+    	Number of outstanding requests per TCP connection (used for both load and sym agents) (default 1)
   -symAgents string
     	ip of latency agents separated by commas, e.g. ip1,ip2,...
   -targetHost string
@@ -148,7 +148,7 @@ For more check the ``init_rand`` function in ``agents/rand_gen.c``.
 Lancet supports the following load patterns:
 
 1. ``fixed:<QPS>[:<#Samples>[:<Sampling_Rate>]]``<br/>
-Fixed load level **without** the self-correcting methodology.
+Fixed load level **without** the self-correcting methodology.  Sampling_Rate is specified as a percentage.  So 5 means 5%.
 
 2. ``fixedQual:<QPS>[:<#Samples>[:<Sampling_Rate>]]``<br/>
 Fixed load level **with** the self-correcting methodology. The extra arguments only configure the initial values for #Samples and sampling rate.
