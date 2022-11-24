@@ -99,6 +99,18 @@ struct __attribute__((__packed__)) latency_reply {
 	uint64_t P99_i;
 	uint64_t P99;
 	uint64_t P99_k;
+        uint64_t P999_i;
+	uint64_t P999;
+	uint64_t P999_k;
+        uint64_t P9999_i;
+	uint64_t P9999;
+	uint64_t P9999_k;
+        uint64_t P99999_i;
+	uint64_t P99999;
+	uint64_t P99999_k;
+        uint64_t P999999_i;
+	uint64_t P999999;
+	uint64_t P999999_k;
 	uint32_t ToReduceSampling;
 	uint8_t IsIid;
 	uint8_t IsStationary;

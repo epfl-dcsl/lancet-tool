@@ -397,6 +397,9 @@ static void latency_tcp_main(void)
 			conn->buffer_idx += ret;
 			read_res = handle_response(conn);
 			if (read_res.reqs > 0) {
+                                if (get_app_proto()->type == PROTO_MEMCACHED_BIN) {
+                                        assert(read_res.reqs == 1);
+                                }
 				end_time = time_ns();
 				/*BookKeeping*/
 				add_throughput_rx_sample(read_res);
@@ -544,16 +547,69 @@ static void symmetric_nic_tcp_main(void)
 	}
 }
 
+static void send_request(struct request *to_send, uint32_t fd)
+{
+	struct msghdr hdr;
+	int ret, bytes_to_send, i, current_iov_cnt;
+	current_iov_cnt = to_send->iov_cnt;
+
+	struct iovec *current_iovs = to_send->iovs;
+
+	int cumulative_bytes;
+
+	do {
+		bzero(&hdr, sizeof(hdr));
+		hdr.msg_iov = current_iovs;
+		hdr.msg_iovlen = current_iov_cnt;
+
+		bytes_to_send = 0;
+		for (i = 0; i < current_iov_cnt; i++)
+			bytes_to_send += current_iovs[i].iov_len;
+
+		ret = sendmsg(fd, &hdr, 0);
+                if ((ret < 0) && (errno != EWOULDBLOCK)) {
+			lancet_perror("Unknown connection error write\n");
+			return;
+		}
+		if (ret < bytes_to_send) {
+			i = 0;
+			cumulative_bytes = 0;
+			while (cumulative_bytes < ret) {
+				assert(i < current_iov_cnt);
+				assert(cumulative_bytes <= ret); // should never exceed ret
+
+				if (cumulative_bytes + current_iovs[i].iov_len > ret) {
+					// found, but too much
+					// set remaining bytes
+					current_iovs[i].iov_len =
+						(cumulative_bytes + current_iovs[i].iov_len) - ret;
+					current_iovs[i].iov_base =
+						current_iovs[i].iov_base + (ret - cumulative_bytes);
+					current_iovs = &current_iovs[i];
+					current_iov_cnt -= i;
+					cumulative_bytes = ret;
+				} else if (cumulative_bytes + current_iovs[i].iov_len == ret) {
+					current_iovs = &current_iovs[i + 1];
+					current_iov_cnt -= (i + 1);
+					cumulative_bytes = ret;
+				} else {
+					cumulative_bytes += current_iovs[i].iov_len;
+					i++;
+				}
+			}
+		}
+	} while (ret < bytes_to_send);
+}
+
 static void symmetric_tcp_main(void)
 {
-	int ready, idx, i, j, conn_per_thread, ret, bytes_to_send;
+	int ready, idx, i, j, conn_per_thread, ret, bytes_total;
 	long next_tx;
 	struct epoll_event *events;
 	struct tcp_connection *conn;
 	struct request *to_send;
 	struct byte_req_pair read_res;
 	struct byte_req_pair send_res;
-	struct msghdr hdr;
 	struct timespec tx_timestamp, rx_timestamp, latency;
 	struct timestamp_info *pending_tx;
 
@@ -580,26 +636,18 @@ static void symmetric_tcp_main(void)
 			to_send = prepare_request();
 
 			// send once
-			bytes_to_send = 0;
-			for (i = 0; i < to_send->iov_cnt; i++)
-				bytes_to_send += to_send->iovs[i].iov_len;
-
-			bzero(&hdr, sizeof(hdr));
-			hdr.msg_iov = to_send->iovs;
-			hdr.msg_iovlen = to_send->iov_cnt;
-			time_ns_to_ts(&tx_timestamp);
-			ret = sendmsg(conn->fd, &hdr, 0);
-			if ((ret < 0) && (errno != EWOULDBLOCK)) {
-				lancet_perror("Unknown connection error write\n");
-				return;
-			}
-			assert(ret == bytes_to_send);
+                        time_ns_to_ts(&tx_timestamp);
+                        bytes_total = 0;
+                        for (i = 0; i < to_send->iov_cnt; i++)
+                                bytes_total += to_send->iovs[i].iov_len;
+                        send_request(to_send, conn->fd);
+			
 			push_complete_tx_timestamp(&per_conn_tx_timestamps[conn->idx],
 									   &tx_timestamp);
 			conn->pending_reqs++;
 
 			/*BookKeeping*/
-			send_res.bytes = ret;
+			send_res.bytes = bytes_total;
 			send_res.reqs = 1;
 			add_throughput_tx_sample(send_res);
 

@@ -25,6 +25,7 @@
 #pragma once
 
 #define CMD_GET 0x00
+#define CMD_GETK 0x0c
 #define CMD_SET 0x01
 
 struct __attribute__((__packed__)) bmc_header {

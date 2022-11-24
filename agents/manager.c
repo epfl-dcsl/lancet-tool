@@ -209,6 +209,18 @@ static void reply_latency_stats(int sockfd)
 	data.P99_i = agg_stats->lt_s.p99_i;
 	data.P99 = agg_stats->lt_s.p99;
 	data.P99_k = agg_stats->lt_s.p99_k;
+        data.P999_i = agg_stats->lt_s.p999_i;
+	data.P999 = agg_stats->lt_s.p999;
+	data.P999_k = agg_stats->lt_s.p999_k;
+        data.P9999_i = agg_stats->lt_s.p9999_i;
+	data.P9999 = agg_stats->lt_s.p9999;
+	data.P9999_k = agg_stats->lt_s.p9999_k;
+        data.P99999_i = agg_stats->lt_s.p99999_i;
+	data.P99999 = agg_stats->lt_s.p99999;
+	data.P99999_k = agg_stats->lt_s.p99999_k;
+        data.P999999_i = agg_stats->lt_s.p999999_i;
+	data.P999999 = agg_stats->lt_s.p999999;
+	data.P999999_k = agg_stats->lt_s.p999999_k;
 
 	iov[0].iov_base = &m;
 	iov[0].iov_len = sizeof(struct msg1);
