@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-.PHONY: coordinator agents style manager manager_r2p2 all clean
+.PHONY: coordinator agents style manager all clean
 
 .DEFAULT_GOAL := all
 all: agents

@@ -31,6 +31,7 @@
 #include <strings.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
 #include <sys/types.h>
 
 #include <lancet/agent.h>
@@ -136,7 +137,7 @@ struct byte_req_pair process_response(char *buf, int size)
 	return consume_response(cfg->app_proto, &received);
 }
 
-static void *agent_main(void *arg)
+static void* agent_main(void *arg)
 {
 	cpu_set_t cpuset;
 	pthread_t thread;
@@ -153,7 +154,9 @@ static void *agent_main(void *arg)
 
 	s = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
 	if (s != 0) {
-		lancet_perror("pthread_setaffinity_np");
+		char buf[256];
+		snprintf(buf, sizeof(buf), "ERROR: pthread_setaffinity_np failed for thread %d", thread_idx);
+		lancet_perror(buf);
 		return NULL;
 	}
 	cfg->tp->tp_main[cfg->atype]();
@@ -202,6 +205,15 @@ int main(int argc, char **argv)
 
 	if (cfg->atype == SYMMETRIC_NIC_TIMESTAMP_AGENT)
 		enable_nic_timestamping(cfg->if_name);
+
+	/* Auto-select number of threads to use */
+	if (cfg->thread_count == -1) {
+		cfg->thread_count = get_nprocs();
+		if (cfg->conn_count < cfg->thread_count) {
+			cfg->thread_count = cfg->conn_count;
+			lancet_fprintf(stderr, "Limiting number of threads to %d\n", cfg->thread_count);
+		}
+	}
 
 	if (configure_control_block()) {
 		lancet_fprintf(stderr, "failed to init the control block\n");
