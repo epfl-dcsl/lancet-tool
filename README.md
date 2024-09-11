@@ -74,7 +74,7 @@ Usage of ./coordinator/coordinator:
     	interface name for hardware timestamping (default "enp65s0")
   -loadAgents string
     	ip of loading agents separated by commas, e.g. ip1,ip2,... (this can be specified along with symAgents.  These would add additional load)
-  -loadConn int
+  -loadConns int
     	number of loading connections per agent (used for both load and sym agents) (default 1)
   -loadPattern string
     	load pattern (default "fixed:10000")
@@ -84,7 +84,7 @@ Usage of ./coordinator/coordinator:
     	latency qps (default 4000)
   -ltAgents string
     	ip of latency agents separated by commas, e.g. ip1,ip2,...
-  -ltConn int
+  -ltConns int
     	number of latency connections (default 1)
   -ltThreads int
     	latency threads per agent (default 1)
